@@ -6,5 +6,5 @@ setup(
     description="Python version of ESPERs",
     author="Larissa M. Dias",
     author_email="lmdias@uw.edu",
-    packages=["numpy, pandas, seawater, scipy, matplotlib, statistics, importlib"],
+    packages=["PyESPER"],
     install_requires=[])
