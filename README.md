@@ -2,17 +2,20 @@
 version 1.0.0
 
 <ins>Note:</ins>
-This is a for use of the [PyESPER](https://github.com/LarissaMDias/PyESPER/blob/main) package. This package is being developed in parallel with [pyTRACE](https://github.com/d-sandborn/pyTRACE/tree/main).
+This is for use of the [PyESPER](https://github.com/LarissaMDias/PyESPER/blob/main) package. This package is being developed in parallel with [pyTRACE](https://github.com/d-sandborn/pyTRACE/tree/main).
 
 ## Quick Start
-Please see the associated [Examples](https://github.com/LarissaMDias/PyESPER/blob/main/examples_glodap.ipynb) for a quick example of use of the preliminary PyESPER. To run this code, you will need to first make sure that you have downloaded the required associated files from the GitHub page as follows. You will also need to ensure that the installed package [requirements](https://github.com/LarissaMDias/PyESPER/blob/main/requirements.txt) are met. The example uses the [GLODAPv2.2023](https://glodap.info) dataset and requires the [glodap](https://github.com/BjerknesClimateDataCentre/glodap/tree/master) package be installed.
+Please see the associated [Examples](https://github.com/LarissaMDias/PyESPER/blob/main/examples.py) for a quick example of use of the preliminary PyESPER. To run this code, you will need to first make sure that you have downloaded the required associated files from the GitHub page as follows. You will also need to ensure that the installed package [requirements](https://github.com/LarissaMDias/PyESPER/blob/main/requirements.txt) are met. The example uses the [GLODAPv2.2023](https://glodap.info) dataset and requires the [glodap](https://github.com/BjerknesClimateDataCentre/glodap/tree/master) package be installed.
+
+To install PyESPER to your remote depository, simply run the following in your terminal: 
+
+git install pip+https://github.com/LarissaMDias/PyESPER
 
 Mat_fullgrid folder: 
 Folder of .mat files needed for each variable to be estimated, necessary for PyESPER_LIR or PyESPER_Mixed
     
 NeuralNetworks folder:
 Folder of .py files needed for each variable to be estimated, necessary for running PyESPER_NN or PyESPER_Mixed. These currently must be unpacked into the main directory. 
-Note: A pickled version of these files is in progress, which should make things easier. 
     
 Uncertainty_Polys folder:
 Folder of .mat files needed for ach variable to be estimated, necessary for running PyESPER_NN or PyESPER_Mixed
@@ -21,7 +24,7 @@ SimpleCantEstimateLR.csv:
 File necessary for estimating anthropogenic carbon component for pH or DIC
     
 ## Introduction
-PyESPER is a Python implementation of MATLAB Empirical Seawater Property Estimation Routines ([ESPERs](https://github.com/BRCScienceProducts/ESPER)), and the present version consists of a preliminary Jupyter Notebook which implements these routines. These routines provide estimates of seawater biogeochemical properties at user-provided sets of coordinates, depth, and available biogeochemical properties. Three algorithm options are available through these routines: 
+PyESPER is a Python implementation of MATLAB Empirical Seawater Property Estimation Routines ([ESPERs](https://github.com/BRCScienceProducts/ESPER)), and the present version consists of a preliminary package which implements these routines. These routines provide estimates of seawater biogeochemical properties at user-provided sets of coordinates, depth, and available biogeochemical properties. Three algorithm options are available through these routines: 
 
 1. Locally interpolated regressions (LIRs)
 2. Neural networks (NNs)
@@ -91,9 +94,9 @@ These are the first version of Python implementation of ESPERv1.1, which is an a
 ### Requirements
 For the present version, you will need to download the repository along with the affiliated neural network files within the [NeuralNetworks](https://github.com/LarissaMDias/PyESPER/tree/main/NeuralNetworks) folder, and the [SimpleCantEstimateLR_full.csv](https://github.com/LarissaMDias/PyESPER/blob/main/SimpleCantEstimateLR_full.csv) file for estimates involving anthropogenic carbon calculations (pH and dissolved inorganic carbon). 
 
-To run the code, you will need numpy, pandas, seawater, scipy, time, matplotlib, decimal, PyCO2SYS, importlib, statistics, and math packages.
+To run the code, you will need numpy, pandas, seawater (now deprecated but necessary for consistency with ESPERv1), scipy, time, matplotlib, PyCO2SYS, importlib, statistics, and os packages.
 
-Please refer to the examples Notebooks that you can try without needing to install anything.
+Please refer to the examples .py file for proper use.
 
 ### Organization and Units
 The measurements are provided in molar units or if potential temperature or AOU are needed but not provided by the user. Scale differences from TEOS-10 are a negligible component of alkalinity estimate error. PyCO2SYS is required if pH on the total scale is a desired output variable.
@@ -131,7 +134,7 @@ Silicate: silicate
 Dissolved Oxygen (O<sub>2</sub>):  oxygen
 
 ##### Path (required string):
-Path directing Python to the location of saved/downloaded LIR files on the user's computer (e.g., '/Users/lara/Documents/Python'). 
+Path directing Python to the location of saved/downloaded LIR files on the user's computer, if not in the current working directory (otherwise blank; e.g., '/Users/lara/Documents/Python' or ''). 
 
 ##### OutputCoordinates (required n by 3 dictionary, where n are the number of desired estimate locations and the three dicstionary keys are longitude, latitude, and depth):
 Coordinates at which estimates are desired. The keys should be longitude (degrees E), latitude (degrees N), and positive integer depth (m), with dictionary keys named 'longitude', 'latitude', and 'depth' (ex: OutputCoordinates={"longitude": [0, 180, -50, 10], "latitude": [85, -20, 18, 0.5], "depth": [10, 1000, 0, 0]} or OutputCoordinates={"longitude": long, "latitude": lat, "depth": depth} when referring to a set of predefined lists or numpy arrays of latitude, longitude, and depth information. 
@@ -193,10 +196,10 @@ Setting this to false will reduce the number of updates, warnings, and errors pr
 #### Outputs:
 
 ##### Estimates: 
-An n by e pandas DataFrame of estimates specific to the coordinates and parameter measurements provided as inputs. Units are micromoles per kg (equivalent to the deprecated microeq per kg seawater). Column names are the unique desired variable-equation combinations requested by the user. 
+An n by e dictionary of estimates specific to the coordinates and parameter measurements provided as inputs. Units are micromoles per kg (equivalent to the deprecated microeq per kg seawater). Column names are the unique desired variable-equation combinations requested by the user. 
 
 ##### Coefficients (LIRs only):
-An n by e pandas DataFrame of equation intercepts and coefficients specific to the coordinates and parameter measurements provided as inputs. Column names are the unique desired variable-equation combinations requested by the user. 
+An n by e dictionary of dictionaries of equation intercepts and coefficients specific to the coordinates and parameter measurements provided as inputs. Column names are the unique desired variable-equation combinations requested by the user. 
 
 ##### Uncertainties: 
 An n by e dictionary of uncertainty estimates specific to the coordinates, parameter measurements, and parameter uncertaineis provided. Units are micromoles per kg (equivalent to the deprecated microeq per kg seawater). Column names are the unique desired variable-equation combinations requested by the user. 
