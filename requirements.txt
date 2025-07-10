@@ -4,3 +4,7 @@ scipy
 matplotlib
 PyCO2SYS
 importlib
+statistics
+os
+pandas
+time
