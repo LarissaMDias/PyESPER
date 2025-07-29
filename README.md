@@ -9,7 +9,7 @@ Please see the associated [Examples](https://github.com/LarissaMDias/PyESPER/blo
 
 To install PyESPER to your remote depository, simply run the following in your terminal: 
 
-pip install git+https://github.com/LarissaMDias/PyESPER
+pip install PyESPER
 
 Mat_fullgrid folder: 
 Folder of .mat files needed for each variable to be estimated, necessary for PyESPER_LIR or PyESPER_Mixed
