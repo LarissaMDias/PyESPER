@@ -1,7 +1,7 @@
 def errors(OutputCoordinates={}, PredictorMeasurements={}):
 
     """
-    Custom error messages for PyESPER.
+    Custom error messages for PyESPER that check inputs and ensure that formatting and other requirements are met
     """
 
     # Checking for presence of required input parameters and raising a custom error message if needed
@@ -36,3 +36,4 @@ def errors(OutputCoordinates={}, PredictorMeasurements={}):
     if any(l == -9999 or l == -9 or l == -1e20 for l in OutputCoordinates["latitude"]):
            print("Warning: A common non-NaN missing data indicator (e.g., -999, -9, -1e20) was detected in the input measurements provided. Missing data should be replaced with NaNs. Otherwise, ESPER will interpret your inputs at face value and give terrible estimates.")  
  
+    print("Please note that, for consistency with MATLAB ESPERv1, the now-deprecated sw package is used. This will be replaced with gsw in future updates.")

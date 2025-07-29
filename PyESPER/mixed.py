@@ -1,4 +1,4 @@
-def PyESPER_Mixed(DesiredVariables, Path, OutputCoordinates={}, PredictorMeasurements={}, **kwargs):
+def mixed(DesiredVariables, Path, OutputCoordinates={}, PredictorMeasurements={}, **kwargs):
     
     """
     Python interpretation of ESPER_Mixedv1.1
@@ -12,16 +12,14 @@ def PyESPER_Mixed(DesiredVariables, Path, OutputCoordinates={}, PredictorMeasure
     ************************************************************************* 
     """
     import time
-
     import numpy as np
-
     from .lir import lir
     from .nn import nn
     
     tic = time.perf_counter()
 
     # Fetch estimates and uncertainties from PyESPER_LIR and PyESPER_NN
-    EstimatesLIR, UncertaintiesLIR, _ = lir(DesiredVariables, Path, OutputCoordinates, PredictorMeasurements, **kwargs)
+    EstimatesLIR, _, UncertaintiesLIR = lir(DesiredVariables, Path, OutputCoordinates, PredictorMeasurements, **kwargs)
     EstimatesNN, UncertaintiesNN = nn(DesiredVariables, Path, OutputCoordinates, PredictorMeasurements, **kwargs)
 
     Estimates, Uncertainties = {}, {}
@@ -30,11 +28,10 @@ def PyESPER_Mixed(DesiredVariables, Path, OutputCoordinates={}, PredictorMeasure
         estimates_nn = np.array(EstimatesNN[est_type])
         uncertainties_lir = np.array(UncertaintiesLIR[est_type])
         uncertainties_nn = np.array(UncertaintiesNN[est_type])
-
         Estimates[est_type] = np.mean([estimates_lir, estimates_nn], axis=0).tolist()
-        Uncertainties[est_type] = np.min([uncertainties_lir, uncertainties_nn], axis=0).tolist()
+        Uncertainties[est_type] = np.minimum(uncertainties_lir, uncertainties_nn).tolist()
 
     toc = time.perf_counter()
     print(f"PyESPER_Mixed took {toc - tic:0.4f} seconds, or {(toc-tic)/60:0.4f} minutes to run")    
 
-    return DataFrame(Estimates), DataFrame(Uncertainties)
+    return Estimates, Uncertainties

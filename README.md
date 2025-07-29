@@ -9,7 +9,7 @@ Please see the associated [Examples](https://github.com/LarissaMDias/PyESPER/blo
 
 To install PyESPER to your remote depository, simply run the following in your terminal: 
 
-git install pip+https://github.com/LarissaMDias/PyESPER
+pip install PyESPER
 
 Mat_fullgrid folder: 
 Folder of .mat files needed for each variable to be estimated, necessary for PyESPER_LIR or PyESPER_Mixed
@@ -205,4 +205,4 @@ An n by e dictionary of dictionaries of equation intercepts and coefficients spe
 An n by e dictionary of uncertainty estimates specific to the coordinates, parameter measurements, and parameter uncertaineis provided. Units are micromoles per kg (equivalent to the deprecated microeq per kg seawater). Column names are the unique desired variable-equation combinations requested by the user. 
 
 #### Missing Data:
-Should be indicated with a NaN. A NaN coordinate will yield NaN estimates for all equations at that coordinate. A NaN parameter value will yield NaN esitmates for all equations that require that parameter. 
+Should be indicated with a NaN. A NaN coordinate will yield NaN estimates for all equations at that coordinate. A NaN parameter value will yield NaN esitmates for all equations that require that parameter.  

@@ -2,6 +2,22 @@ def lir(DesiredVariables, Path, OutputCoordinates={}, PredictorMeasurements={}, 
     
     """
     Locally Interpolated Regressions (LIRs) for Empirical Seawater Property Estimation
+    Runs all associated functions that calculate seawater properties from geographic coordinates,
+        salinity, and optional other input variables using interpolation methods. Please refer
+        to the README for more information.
+
+    Inputs:
+        DesiredVariables: List of desired output variables
+        Path: Optional change of path location relative to user computer paths
+        OutputCoordinates: Dictionary of "latitude", "longitude", and "depth" location outputs
+        PredictorMeasurements: Dictionary of "salinity" and other optional predictor measurements
+        **kwargs include MeasUncerts, EstDates, Equations, PerKgSwTF, VerboseTF - see README for
+            full explanations
+
+    Outputs:
+        Estimates: Dictionary of estimates for each desired variable - equation combination
+        Coefficients: Dictionary of dictionaries of coefficients for each combination
+        Uncertainties: Dictionary of uncertainties for each combination
     """
 
     import time
@@ -25,24 +41,27 @@ def lir(DesiredVariables, Path, OutputCoordinates={}, PredictorMeasurements={}, 
     # Starting the timer
     tic = time.perf_counter() 
     
-    # Function that provides custom error messages for erroneous input
+    # Providing custom error messages for erroneous input
     errors(OutputCoordinates, PredictorMeasurements)
 
-    # Function which calculates default measurement uncertainties
-    Equations, n, e, p, VerboseTF, EstDates, C, PerKgSwTF, MeasUncerts = defaults(
+    # Setting defaults for various input parameters, including defining kwargs and
+    # ensuring that coordinates use the correct format
+    Equations, n, VerboseTF, EstDates, C, PerKgSwTF, MeasUncerts = defaults(
         DesiredVariables, 
+        PredictorMeasurements,
         OutputCoordinates, 
         **kwargs
     )
     
-    # Function that processes the input values and default uncertainties and makes sense of it
+    # Processing the input values (Uncertainties_pre) and calculating default 
+    # measurement uncertainties 
     Uncertainties_pre, DUncertainties_pre  = measurement_uncertainty_defaults(
         n, 
         PredictorMeasurements, 
         MeasUncerts
     )
     
-    # Creating a pandas DataFrame of input data
+    # Creating an updated dictionary of all input data
     InputAll  = inputdata_organize(
         EstDates, 
         C, 
@@ -50,6 +69,7 @@ def lir(DesiredVariables, Path, OutputCoordinates={}, PredictorMeasurements={}, 
         Uncertainties_pre
     )
 
+    # Defining temperature as needed
     PredictorMeasurements, InputAll = temperature_define(
         DesiredVariables,
         PredictorMeasurements,
@@ -57,6 +77,8 @@ def lir(DesiredVariables, Path, OutputCoordinates={}, PredictorMeasurements={}, 
         **kwargs
     )
 
+    # Performing iterations for equation-desired variable combinations;
+    # pre-defines the correct input data for LIRs
     code, unc_combo_dict, dunc_combo_dict = iterations(
         DesiredVariables, 
         Equations, 
@@ -68,17 +90,31 @@ def lir(DesiredVariables, Path, OutputCoordinates={}, PredictorMeasurements={}, 
         DUncertainties_pre
     )
 
-    # Loading the data
-    LIR_data = fetch_data(DesiredVariables, Path)
+    # Loading the pre-trained algorithm data
+    LIR_data = fetch_data(
+        DesiredVariables, 
+        Path
+    )
 
-    # Separating user-defined coordinates into Atlantic and Arctic or other regions
-    AAdata, Elsedata = input_AAinds(C, code)
+    # Separating user-defined coordinates into Atlantic and Arctic (AAdata)
+    # or other regions (Elsedata)
+    AAdata, Elsedata = input_AAinds(
+        C, 
+        code
+    )
 
     # Separating ESPER pre-defined coefficients into Atlantic and Arctic or other regions
-    Gdf, CsDesired = coefs_AAinds(Equations, LIR_data)
+    Gdf, CsDesired = coefs_AAinds(
+        Equations, 
+        LIR_data
+    )
 
     # Interpolate
-    aaLCs, aaInterpolants_pre, elLCs, elInterpolants_pre = interpolate(Gdf, AAdata, Elsedata)
+    aaLCs, aaInterpolants_pre, elLCs, elInterpolants_pre = interpolate(
+        Gdf, 
+        AAdata, 
+        Elsedata
+    )
  
     # Organize data and compute estimates
     Estimate, CoefficientsUsed = organize_data(
@@ -91,7 +127,8 @@ def lir(DesiredVariables, Path, OutputCoordinates={}, PredictorMeasurements={}, 
         Elsedata
     )
 
-    EMLR = emlr_estimate(
+    # Calculate initial uncertainties for lirs
+    Uncertainties = emlr_estimate(
         Equations, 
         DesiredVariables, 
         Path,
@@ -101,6 +138,8 @@ def lir(DesiredVariables, Path, OutputCoordinates={}, PredictorMeasurements={}, 
         dunc_combo_dict,
         Coefficients=CoefficientsUsed)
    
+    # First of three steps to adjust pH and DIC for
+    # anthropogenic carbon, as needed
     Cant_adjusted, Cant, Cant2002 = adjust_pH_DIC(
         DesiredVariables,
         VerboseTF,
@@ -108,8 +147,10 @@ def lir(DesiredVariables, Path, OutputCoordinates={}, PredictorMeasurements={}, 
         Estimate,
         PredictorMeasurements,
         OutputCoordinates,
-        **kwargs)
+        **kwargs
+    )
 
+    # Second of three steps for Cant adjustment, for pH only
     Cant_adjusted = pH_adjustment(
         Path,
         DesiredVariables, 
@@ -124,20 +165,27 @@ def lir(DesiredVariables, Path, OutputCoordinates={}, PredictorMeasurements={}, 
         C,
         Uncertainties_pre,
         DUncertainties_pre,
-        **kwargs)
+        **kwargs
+    )
 
+    # Last of three adjustments for anthropogenic carbon
     Cant_adjusted, combos2, values2 = pH_adjcalc(
         DesiredVariables,
         VerboseTF,
         Estimate,
         Cant_adjusted,
-        **kwargs)
+        **kwargs
+    )
 
-    Estimates = final_formatting(DesiredVariables, Cant_adjusted, Estimate)
+    # Finalizing formatting of estimate output
+    Estimates = final_formatting(
+        DesiredVariables, 
+        Cant_adjusted, 
+        Estimate
+    )
    
      # Stopping the timer
     toc = time.perf_counter()
     print(f"PyESPER_LIR took {toc - tic:0.4f} seconds, or {(toc-tic)/60:0.4f} minutes to run")    
 
-    return Estimates, CoefficientsUsed, EMLR
->>>>>>> 591e951 (added examples.py)
+    return Estimates, CoefficientsUsed, Uncertainties

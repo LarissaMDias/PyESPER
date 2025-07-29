@@ -1,7 +1,24 @@
-def defaults (DesiredVariables, OutputCoordinates={}, **kwargs):
+def defaults (DesiredVariables, PredictorMeasurements={}, OutputCoordinates={}, **kwargs):
 
     """
     Set default values and bookkeep inputs.
+
+    Inputs: 
+        DesiredVariables: List of desired output variables (user-requested)
+        PredictorMeasurements: Dictionary of user-provided predictor mesasurements (salinity, etc.)
+        OutputCoordinates: Dictionary of user-provided coordinates
+        **kwargs: Please see README for more information
+
+    Outputs:
+        Equations: numpy array of equations (either user-defined or default)
+        n: Scalar representing number of required estimates for each variable-equation comination
+        e: Scalar representing number of requested equations
+        p: Scalar representing number of requested output variables
+        VerboseTF: Boolean read-in of whether user wants to suppress optional warnings
+        C: Dictionary of processed geographic coordinates
+        PerKgSwTF: Boolean representing whether user input is in molal or molar units
+        MeasUncerts: Dictionary of user input measurement uncertainty values or empty 
+            dictionary if not provided   
     """
 
     import numpy as np
@@ -10,9 +27,7 @@ def defaults (DesiredVariables, OutputCoordinates={}, **kwargs):
     Equations = kwargs.get("Equations", list(range(1, 17)))
     
     # Reading dimensions of user input
-    n = max(len(v) for v in OutputCoordinates.values()) # number of rows out
-    e = len(Equations) # number of Equations
-    p = len(DesiredVariables) # number of Variables
+    n = max(len(v) for v in OutputCoordinates.values()) 
                 
     # Checking kwargs for presence of VerboseTF and EstDates, and Equations, and defining defaults, as needed
     VerboseTF = kwargs.get("VerboseTF", True)
@@ -20,12 +35,12 @@ def defaults (DesiredVariables, OutputCoordinates={}, **kwargs):
     # Set EstDates based on kwargs, defaulting to 2002.0 if not provided
     if "EstDates" in kwargs:
         d = np.array(kwargs["EstDates"])
-        EstDates = (
-            [item for sublist in [kwargs["EstDates"]] * (n + 1) for item in sublist]
-            if len(d) != n else list(d)
-        )
+        if len(d) != n:
+            EstDates = np.tile(d, (n + 1, 1)).reshape(-1)
+        else:
+            EstDates = d
     else:
-        EstDates = [2002.0] * n
+        EstDates = np.full(n, 2002.0)
         
     # Bookkeeping coordinates
     C = {}
@@ -53,4 +68,4 @@ def defaults (DesiredVariables, OutputCoordinates={}, **kwargs):
         if len(MeasUncerts) != len(PredictorMeasurements):
             print("Warning: Different numbers of input uncertainties and input measurements.")
 
-    return Equations, n, e, p, VerboseTF, EstDates, C, PerKgSwTF, MeasUncerts
+    return Equations, n, VerboseTF, EstDates, C, PerKgSwTF, MeasUncerts

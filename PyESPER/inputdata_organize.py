@@ -6,20 +6,29 @@ def inputdata_organize(
 ):
 
     """
-    This function preprocesses data into a pandas DataFrame
+  This function preprocesses data into a dictionary for easier referencing
+
+    Inputs:
+        EstDates: List of preprocessed dates
+        C: Dictionary of preprocessed geographic coordinates
+        PredictorMeasurements: Dictionary of preprocessed inputs
+        Uncertainties: Dictionary of preprocessed uncertainties
+
+    Ouputs:
+        InputAll: Dictionary of preprocessed coordinates, measurements, uncertainties, dates, and an indexing term
     """
-  
-    import pandas as pd
 
-    n = max(len(v) for v in C.values()) # number of rows out
+    import numpy as np
 
-    # Redefining and organizing all data thus far
-    order = list(range(n))
-    input_data = {
+    n = max(len(v) for v in C.values()) # Simply recalculating number of rows out
+
+    # Redefining and organizing all data thus far, and adding an order/indexing stamp
+    order = np.arange(n)
+    InputAll = {
         "Order": order,
-        "Longitude": C["longitude"],
-        "Latitude": C["latitude"],
-        "Depth": C["depth"],
+        "Longitude": np.array(C["longitude"]),
+        "Latitude": np.array(C["latitude"]),
+        "Depth": np.array(C["depth"]),
         "Salinity": PredictorMeasurements["salinity"],
         "Dates": EstDates,
         "Salinity_u": Uncertainties["sal_u"],
@@ -30,7 +39,7 @@ def inputdata_organize(
         "Oxygen_u": Uncertainties["oxygen_u"]
     }
 
-    # Map PredictorMeasurements keys to input_data keys
+   # Map PredictorMeasurements keys to InputAll keys
     for key, label in {
         "temperature": "Temperature",
         "phosphate": "Phosphate",
@@ -39,10 +48,7 @@ def inputdata_organize(
         "oxygen": "Oxygen"
     }.items():
         if key in PredictorMeasurements:
-            input_data[label] = PredictorMeasurements[key]
-   
-    # Create a DataFrame with order stamp and drop all NaNs from a replicate dataframe
-    InputAll = pd.DataFrame(input_data)
+            InputAll[label] = np.array(PredictorMeasurements[key])
 
     return InputAll
 

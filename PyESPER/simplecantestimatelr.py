@@ -2,10 +2,17 @@ def simplecantestimatelr(EstDates, longitude, latitude, depth):
 
     """
     Simple estimate of contribution of anthropogenic carbon to pH and DIC estimates.
+
+    Inputs:
+        EstDates: List of dates for which estimates will be made
+        longitude:
+
+    Ouptuts:
+        CantMeas: List of anthropogenic carbon estimates
+        Cant2002: List of anthropogenic carbon estimates for 2002
     """
 
     import numpy as np
-    import math
     import pandas as pd
     from scipy.interpolate import griddata
 
@@ -29,8 +36,8 @@ def simplecantestimatelr(EstDates, longitude, latitude, depth):
     Cant2002 = griddata(pointsi, values, pointso, method='linear')
 
     # Adjust for estimation dates
-    CantMeas = [
-        c * math.exp(0.018989 * (date - 2002)) for c, date in zip(Cant2002, EstDates)
-    ]
+    EstDates = np.asarray(EstDates)
+    CantMeas = Cant2002 * np.exp(0.018989 * (EstDates - 2002))
 
     return CantMeas, Cant2002
+

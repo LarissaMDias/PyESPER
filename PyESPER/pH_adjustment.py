@@ -16,7 +16,29 @@ def pH_adjustment(
 ):
 
     """
-    Adjusting pH for anthropogenic carbon
+    Adjusting pH for anthropogenic carbon in the second of three Cant adjustment
+        scripts
+
+    Inputs:
+        Path: User-defined computer path
+        DesiredVariables: List of desired variables to estimate
+        Dates: List of dates for measurements
+        Cant: Numpy array of anthropogenic carbon estimates for each estimate
+        Cant2002: Numpy array of anthropogenic carbon estimates for each
+            estimate for the year 2002
+        PerKgSwTF: Boolean for whether measurements were in molar or molal units
+        Cant_adjusted: Dictionary of estimates adjusted for Cant
+        Est_pre: Dictionary of estimates for each combination
+        PredictorMeasurements: Dictionary of measurements for estimates
+        OutputCoordinates: Dictionary of geographic coordinates for estimates
+        C: Dictionary of adjusted coordinates for estimates
+        Uncertainties_pre: Dictionary of measurement uncertainties for estimates
+        DUncertainties_pre: Dictionary of default measurement uncertainties for
+            estimates
+        **kwargs: Please see README
+
+    Output:
+        Cant_adjusted: Dictionary of adjusted values for Cant for each combination
     """
 
     import numpy as np
@@ -30,38 +52,45 @@ def pH_adjustment(
     from PyESPER.coefs_AAinds import coefs_AAinds
     from PyESPER.interpolate import interpolate
     from PyESPER.organize_data import organize_data
-
+        
+    # Finding the estimates within the dictionary
     combos2 = list(Est_pre.keys())
     values2 = list(Est_pre.values())
+        
+    # Setting the default warning message boolean and Verbose
     YouHaveBeenWarnedCanth = False
-   
-    if "EstDates" in kwargs and ("DIC" in DesiredVariables or "pH" in DesiredVariables):      
+    VerboseTF = kwargs.get("VerboseTF", True)
+
+    # Proceed only if dates are provided and DIC or pH is requested
+    if "EstDates" in kwargs and ("DIC" in DesiredVariables or "pH" in DesiredVariables):
         if "pH" in DesiredVariables:
             warning = []
             for combo, values in zip(combos2, values2):
                 if combo.startswith("pH"):
+                    # Rerunning LIRs for when pH is requested to obtain TA estimates
+                    # based only on salinity input
                     salinity = PredictorMeasurements["salinity"]
                     PM_pH = {"salinity": salinity}
-                    eq = [16]            
-                    InputAll = inputdata_organize(
+                    eq = [16]
+                    InputAll2 = inputdata_organize(
                         Dates,
                         C,
-                        PredictorMeasurements,
+                        PM_pH,
                         Uncertainties_pre
                     )
-                    PredictorMeasurements, InputAll = temperature_define(
-                        ["TA"],
-                        PredictorMeasurements,
-                        InputAll,
+                    PredictorMeasurements2, InputAll2 = temperature_define(
+                        ["TA"],   
+                        PM_pH,
+                        InputAll2,
                         **kwargs
                     )
                     code, unc_combo_dict, dunc_combo_dict = iterations(
-                        ["TA"], 
+                        ["TA"],
                         eq,
                         PerKgSwTF,
                         C,
-                        PredictorMeasurements,
-                        InputAll,
+                        PredictorMeasurements2,
+                        InputAll2,
                         Uncertainties_pre,
                         DUncertainties_pre
                     )
@@ -69,13 +98,13 @@ def pH_adjustment(
                     AAdata, Elsedata = input_AAinds(C, code)
                     Gdf, CsDesired = coefs_AAinds(eq, LIR_data)
                     aaLCs, aaInterpolants_pre, elLCs, elInterpolants_pre = interpolate(
-                        Gdf,
+                        Gdf,  
                         AAdata,
                         Elsedata
                     )
                     alkest, _ = organize_data(
                         aaLCs,
-                        elLCs,
+                        elLCs,    
                         aaInterpolants_pre,
                         elInterpolants_pre,
                         Gdf,
@@ -84,31 +113,32 @@ def pH_adjustment(
                     )
                     EstAlk = np.array(alkest["TA16"])
                     EstAlk = np.transpose(EstAlk)
-                    EstAlk = EstAlk[0]
                     EstSi = EstP = [0] * len(EstAlk)
+                    # Calculating pressure using the sw package
                     Pressure = sw.pres(OutputCoordinates["depth"], OutputCoordinates["latitude"])
                     Est = np.array(values)
                     Est = np.transpose(Est)
-                    Est = Est[0] 
+                    Est = Est[0]
                     temperature = np.array(PredictorMeasurements["temperature"])
-                        
+                    # Now using CO2SYS to calculate DIC based on the above LIR results for TA
                     # CO2SYS calculations
                     kwargCO2 = {
-                        "par1":EstAlk, 
-                        "par2":Est, 
-                        "par1_type":1, 
-                        "par2_type":3, 
-                        "salinity":salinity, 
-                        "temperature":temperature, 
-                        "temperature_out":temperature, 
-                        "pressure":Pressure, 
-                        "pressure_out":Pressure, 
-                        "total_silicate":EstSi, 
-                        "total_phosphate":EstP, 
+                        "par1":EstAlk,
+                        "par2":Est,
+                        "par1_type":1,
+                        "par2_type":3,
+                        "salinity":salinity,  
+                        "temperature":temperature,
+                        "temperature_out":temperature,
+                        "pressure":Pressure,
+                        "pressure_out":Pressure,
+                        "total_silicate":EstSi,
+                        "total_phosphate":EstP,
                         "opt_total_borate":2}
                     Out = pyco2.sys(**kwargCO2)
                     DICadj = Out["dic"] + Cant - Cant2002
-                   
+                    
+                    # Using this DIC to calculate pH from CO2SYS
                     kwargCO2_2 = {
                         "par1":EstAlk,
                         "par2":DICadj,
@@ -118,31 +148,32 @@ def pH_adjustment(
                         "temperature":temperature,
                         "temperature_out":temperature,
                         "pressure":Pressure,
-                        "pressure_out":Pressure,
+                       "pressure_out":Pressure,
                         "total_silicate":EstSi,
                         "total_phosphate":EstP,
                         "opt_total_borate":2}
                     OutAdj = pyco2.sys(**kwargCO2_2)
                     pHadj = OutAdj["pH"]
-                                       
+                        
                     # Check for convergence warnings
-                    if np.isnan(pHadj).any():
+                    if np.isnan(pHadj).any():   
                         warning_message = (
                             "Warning: CO2SYS took >20 iterations to converge. The corresponding estimate(s) will be NaN. "
                             "This typically happens when ESPER_LIR is poorly suited for estimating water with the given properties "
                             "(e.g., very high or low salinity or estimates in marginal seas)."
                         )
                         warning.append(warning_message)
-                    
+                    # Append to adjusted Cant dictionary
                     Cant_adjusted[combo] = pHadj.tolist()
-                               
+                        
                 # Print warnings if any
                 if warning:
-                    print(warning[0])
-        
-    elif "EstDates" not in kwargs and ("DIC" or "pH" in DesiredVariables) and VerboseTF == True and YouHaveBeenWarnedCanth == False:
+                    print(warning[0]) 
+                        
+    elif "EstDates" not in kwargs and ("DIC" or "pH" in DesiredVariables) and not VerboseTF and YouHaveBeenWarnedCanth:
         print("Warning: DIC or pH is a requested output but the user did not provide dates for the desired esimtates. The estimates "
             "will be specific to 2002.0 unless the optional EstDates input is provided (recommended).")
-        YouHaveBeenWarnedCanth = True
 
+        YouHaveBeenWarnedCanth = True
+                        
     return Cant_adjusted

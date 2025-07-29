@@ -1,24 +1,35 @@
 def process_netresults(Equations, code={}, df={}, EstAtl={}, EstOther={}):
 
-    """ 
+    """
     Regional smoothing and processing net outputs
+
+    Inputs:
+        Equations: List of equations to use
+        code: Dictionary of input for each equation-variable scenario
+        df: Dictionary of coordinates and boolean indicators for regions
+        EstAtl: Dictionary of estimates for the Atlantic and Arctic
+            for each combination
+        EstOther: Dictionary of estimates for not Atlantic and Arctic,
+            for each combination
+
+    Output:
+        Estimate: Dictionary of estimates for each combination
     """
 
-    from statistics import mean
-    import pandas as pd
     import numpy as np
 
+    # Function to provide the mean of values when needed
     def process_estimates(estimates):
         keys = list(estimates.keys())
         values = list(estimates.values())
         result = {}
         for i, key in enumerate(keys):
-            result[key] = [mean(values[i][v]) for v in range(len(values[0]))]
+            result[key] = [np.mean(values[i][v]) for v in range(len(values[0]))]
         return result
 
     Esta = process_estimates(EstAtl)
     Esto = process_estimates(EstOther)
-    
+
     # Processing regionally in the Atlantic and Bering
     EstA, EstB, EB2, ESat, ESat2, ESaf, Estimate  = {}, {}, {}, {}, {}, {}, {}
 
@@ -29,27 +40,28 @@ def process_netresults(Equations, code={}, df={}, EstAtl={}, EstOther={}):
         code[i]["SoAfrInds"] = df["SoAfrInds"]
 
     for codename, codedata in code.items():
-        Estatl, Estb, eb2, Estsat, esat2, esafr, esaf2 = [], [], [], [], [], [], []
+        # Defining empty lists for data from each regions
+        Estatl, Estb, eb2, Estsat, esafr = [], [], [], [], []
         aainds, beringinds, satlinds, latitude, safrinds = (
             codedata[key] for key in ["AAInds", "BeringInds", "SAtlInds", "Latitude", "SoAfrInds"]
         )
-
         Estatl = [Esta[codename][i] if aa_ind else Esto[codename][i] for i, aa_ind in enumerate(aainds)]
-
-        for l in range(0, len(Estatl)):
-            repeated_values = (latitude[l]-62.5)/7.5
+        
+        # Smoothing for the Atlantic
+        for lenatl in range(0, len(Estatl)):
+            repeated_values = (latitude[lenatl]-62.5)/7.5
             B = np.tile(repeated_values, (1, len(Equations)))
-            C = Esta[codename][l]
+            C = Esta[codename][lenatl]
             B1 = C * B
-            repeated_values2 = (70-latitude[l])/7.5
+            repeated_values2 = (70-latitude[lenatl])/7.5
             D = np.tile(repeated_values2, (1, len(Equations)))
-            E = Esto[codename][l]
+            E = Esto[codename][lenatl]
             B2 = E * D
             Estb.append(B1[0][0] + B2[0][0])
-
+    
         eb2 = [Estb[j] if b_ind else Estatl[j] for j, b_ind in enumerate(beringinds)]
-
-        for n in range(0, len(satlinds)): 
+        # Smoothing for the Bering
+        for n in range(0, len(satlinds)):   
             repeated_values = (latitude[n]+44)/10
             F1 = Esta[codename][n]
             F = np.tile(repeated_values, (1, len(Equations)))
@@ -59,9 +71,9 @@ def process_netresults(Equations, code={}, df={}, EstAtl={}, EstOther={}):
             H = np.tile(repeated_values2, (1, len(Equations)))
             G2 = H1 * H
             Estsat.append(G1[0][0] + G2[0][0])
-    
-        EstA[codename], EstB[codename], EB2[codename], ESat[codename] = Estatl, Estb, eb2, Estsat
 
+        EstA[codename], EstB[codename], EB2[codename], ESat[codename] = Estatl, Estb, eb2, Estsat
+        
     # Regional processing for S. Atlantic
         ESat2[codename] = [
             ESat[codename][i] if satlinds[i] == "True" else EB2[codename][i]
@@ -79,17 +91,15 @@ def process_netresults(Equations, code={}, df={}, EstAtl={}, EstOther={}):
             H = np.tile(repeated_values2, (1, len(Equations)))
             G2 = H1 * H
             esafr.append(G1[0][0] + G2[0][0])
-
+            
         ESaf[codename] = esafr
 
         Estimate[codename] = [
             ESaf[codename][i] if safrinds[i] == "True" else ESat2[codename][i]
             for i in range(len(safrinds))
         ]
-
+        
     # Bookkeeping blanks back to NaN as needed
     Estimate = {k: ('NaN' if v == '' else v) for k, v in Estimate.items()}
-    no_equations = len(Equations)
-
-    return Estimate, no_equations
-
+            
+    return Estimate
