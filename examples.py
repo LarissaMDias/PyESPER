@@ -71,7 +71,7 @@ EstimatesMixed, UncertaintiesMixed = mixed(
     )
 
 # DEBUG, unhash as needed
-#print(EstimatesLIR['TA1']) 
+print(EstimatesLIR['TA1']) 
 #print(CoefficientsLIR['TA1']['Coef A'][5:10])
 #print(EstimatesNN['DIC1'])
 #print(UncertaintiesNN['phosphate1'])

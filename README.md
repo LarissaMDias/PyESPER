@@ -1,5 +1,5 @@
 # PyESPER
-version 1.0.0
+version 1.0.2
 
 <ins>Note:</ins>
 This is for use of the [PyESPER](https://github.com/LarissaMDias/PyESPER/blob/main) package. This package is being developed in parallel with [pyTRACE](https://github.com/d-sandborn/pyTRACE/tree/main).
