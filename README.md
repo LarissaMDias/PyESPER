@@ -7,7 +7,7 @@ This is for use of the [PyESPER](https://github.com/LarissaMDias/PyESPER/blob/ma
 ## Quick Start
 Please see the associated [Examples](https://github.com/LarissaMDias/PyESPER/blob/main/examples.py) for a quick example of use of the preliminary PyESPER. To run this code, you will need to first make sure that you have downloaded the required associated files from the GitHub page as follows. You will also need to ensure that the installed package [requirements](https://github.com/LarissaMDias/PyESPER/blob/main/requirements.txt) are met. The example uses the [GLODAPv2.2023](https://glodap.info) dataset and requires the [glodap](https://github.com/BjerknesClimateDataCentre/glodap/tree/master) package be installed.
 
-To install PyESPER to your remote repository, clone this repository and then simply run the following in your terminal: 
+To install PyESPER to your remote repository, clone this repository and navigate to the PyESPER folder. It is recommended that you create a virtual environment and install all packages listed in the requirements.txt file. Then simply run the following in your terminal: 
 
 pip install PyESPER
 
