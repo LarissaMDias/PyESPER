@@ -2,9 +2,8 @@ numpy
 seawater
 scipy
 matplotlib
+kiwisolver
 PyCO2SYS
 importlib
 statistics
-os
 pandas
-time

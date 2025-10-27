@@ -96,38 +96,37 @@ def emlr_estimate(Equations, DesiredVariables, Path, OutputCoordinates={}, Predi
             DUCu2 = [safe_fill(duncdfs[k], -9999.0) for k in keys]
 
            # Compute uncertainty estimates
-            for eq in Equations:
-                EM = []
-            
-                for cucombo in range(len(Coefs["US"])):
-                    # Grab each coefficient
-                    s = Coefs["US"][cucombo]
-                    t = Coefs["UT"][cucombo]
-                    a = Coefs["UA"][cucombo]
-                    b = Coefs["UB"][cucombo] 
-                    c = Coefs["UC"][cucombo]
+            EM = []
 
-                    # Main uncertainty components
-                    s1 = (s * USu2[0][cucombo]) ** 2
-                    t1 = (t * UTu2[1][cucombo]) ** 2
-                    a1 = (a * UAu2[2][cucombo]) ** 2
-                    b1 = (b * UBu2[3][cucombo]) ** 2
-                    c1 = (c * UCu2[4][cucombo]) ** 2
-                    sum2 = s1 + t1 + a1 + b1 + c1
-            
-                    # Delta uncertainties
-                    ds1 = (s * DUSu2[0][cucombo]) ** 2
-                    dt1 = (t * DUTu2[1][cucombo]) ** 2
-                    da1 = (a * DUAu2[2][cucombo]) ** 2
-                    db1 = (b * DUBu2[3][cucombo]) ** 2
-                    dc1 = (c * DUCu2[4][cucombo]) ** 2
-                    dsum2 = ds1 + dt1 + da1 + db1 + dc1
+            for cucombo in range(len(Coefs["US"])):
+                # Grab each coefficient
+                s = Coefs["US"][cucombo]
+                t = Coefs["UT"][cucombo]
+                a = Coefs["UA"][cucombo]
+                b = Coefs["UB"][cucombo]
+                c = Coefs["UC"][cucombo]
 
-                   # Final uncertainty
-                    uncestimate = np.sqrt(sum2 - dsum2 + emlr[cucombo] ** 2)
-                    EM.append(uncestimate) 
-                    
-                EqM.append(EM)
+                # Main uncertainty components
+                s1 = (s * USu2[0][cucombo]) ** 2
+                t1 = (t * UTu2[1][cucombo]) ** 2
+                a1 = (a * UAu2[2][cucombo]) ** 2
+                b1 = (b * UBu2[3][cucombo]) ** 2
+                c1 = (c * UCu2[4][cucombo]) ** 2
+                sum2 = s1 + t1 + a1 + b1 + c1
+
+                # Delta uncertainties
+                ds1 = (s * DUSu2[0][cucombo]) ** 2
+                dt1 = (t * DUTu2[1][cucombo]) ** 2
+                da1 = (a * DUAu2[2][cucombo]) ** 2
+                db1 = (b * DUBu2[3][cucombo]) ** 2
+                dc1 = (c * DUCu2[4][cucombo]) ** 2
+                dsum2 = ds1 + dt1 + da1 + db1 + dc1
+
+               # Final uncertainty
+                uncestimate = np.sqrt(sum2 - dsum2 + emlr[cucombo] ** 2)
+                EM.append(uncestimate)
+
+            EqM.append(EM)
                     
             # Post-process and apply nan masks
             EqM2 = []

@@ -259,8 +259,8 @@ def organize_nn_output(Path, DesiredVariables, OutputCoordinates={}, PredictorMe
                 total_uncertainty = np.sqrt(np.sum(u) - np.sum(du) + eu**2)
                 sumu.append(total_uncertainty)
             dvu.append(sumu)
-            
-            Uncertainties[name] = dvu[0]
-        
+
+            Uncertainties[name] = sumu
+
     return Uncertainties
 

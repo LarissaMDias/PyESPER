@@ -33,32 +33,32 @@ def run_nets(DesiredVariables, Equations, code={}):
         Bd[name] = value["B"].astype(float).tolist()
         Cd[name] = value["C"].astype(float).tolist()
 
-   # Define a mapping from equations to the list of variables
+   # Define a mapping from equations to the list of variable dictionaries
     equation_map = {
-        1: ["Sd", "Td", "Ad", "Bd", "Cd"],
-        2: ["Sd", "Td", "Ad", "Cd"],
-        3: ["Sd", "Td", "Bd", "Cd"],
-        4: ["Sd", "Td", "Cd"],
-        5: ["Sd", "Td", "Ad", "Bd"],
-        6: ["Sd", "Td", "Ad"],
-        7: ["Sd", "Td", "Bd"],
-        8: ["Sd", "Td"],
-        9: ["Sd", "Ad", "Bd", "Cd"],
-        10: ["Sd", "Ad", "Cd"],
-        11: ["Sd", "Bd", "Cd"],
-        12: ["Sd", "Cd"],
-        13: ["Sd", "Ad", "Bd"],
-        14: ["Sd", "Ad"],
-        15: ["Sd", "Bd"],
-        16: ["Sd"]
+        1: [Sd, Td, Ad, Bd, Cd],
+        2: [Sd, Td, Ad, Cd],
+        3: [Sd, Td, Bd, Cd],
+        4: [Sd, Td, Cd],
+        5: [Sd, Td, Ad, Bd],
+        6: [Sd, Td, Ad],
+        7: [Sd, Td, Bd],
+        8: [Sd, Td],
+        9: [Sd, Ad, Bd, Cd],
+        10: [Sd, Ad, Cd],
+        11: [Sd, Bd, Cd],
+        12: [Sd, Cd],
+        13: [Sd, Ad, Bd],
+        14: [Sd, Ad],
+        15: [Sd, Bd],
+        16: [Sd]
     }
-        
+
     # Create the correct vector for each equation case
     for e in Equations:
         for v in DesiredVariables:
             name = v + str(e)
             # Get the corresponding variables for the equation
-            variables = [locals()[var][name] for var in equation_map[e]]
+            variables = [var[name] for var in equation_map[e]]
             P[name] = [[[cosd, sind, lat, depth] + variables]]
             netstimateAtl, netstimateOther = [], []
             for n in range(1, 5):   
