@@ -4,6 +4,4 @@ scipy
 matplotlib
 kiwisolver
 PyCO2SYS
-importlib
-statistics
 pandas
