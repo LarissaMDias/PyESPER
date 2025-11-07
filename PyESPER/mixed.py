@@ -24,8 +24,8 @@ def mixed(DesiredVariables, Path, OutputCoordinates={}, PredictorMeasurements={}
 
     Estimates, Uncertainties = {}, {}
     for est_type in EstimatesLIR.keys():
-        estimates_lir = np.array(EstimatesLIR[est_type])
-        estimates_nn = np.array(EstimatesNN[est_type])
+        estimates_lir = np.array(EstimatesLIR[est_type]).flatten() # need to flatten to match nn output shape
+        estimates_nn = np.array(EstimatesNN[est_type]).astype(np.float64) # DICx - where x = equation number - returns string values which prevents proper averaging with LIR estimates
         uncertainties_lir = np.array(UncertaintiesLIR[est_type])
         uncertainties_nn = np.array(UncertaintiesNN[est_type])
         Estimates[est_type] = np.mean([estimates_lir, estimates_nn], axis=0).tolist()
