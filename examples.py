@@ -1,10 +1,77 @@
 # %% EXAMPLE
-import glodap
+
+# Basic example first
 
 from PyESPER.lir import lir
 from PyESPER.nn import nn
 from PyESPER.mixed import mixed
- 
+
+import numpy as np
+import scipy.io
+
+OutputCoordinates = {
+    'longitude': [0, -140, 67],
+    'latitude': [0, -30, -40],
+    'depth': [0, 1000, 100]
+}
+
+PredictorMeasurements = {
+    'salinity': [35, 33, 32],
+    'temperature': [5, 2, 0],
+    'phosphate': [0.5, 0.6, 0.4],
+    'nitrate': [9, 8, 10],
+    'silicate': [21, 20, 19],
+    'oxygen': [198, 215, 200]
+}
+
+
+EstDates = [1980, 2002, 2030]
+
+Path = ""
+
+# To estimate TA with equation 2 using only LIR
+EstimatesLIR1, CoefficientsLIR1, UncertaintiesLIR1 = lir(
+     ['TA'],
+     Path,
+     OutputCoordinates,
+     PredictorMeasurements,
+     EstDates=EstDates,
+     Equations=[2]
+)
+
+# To estimate in situ pH on the total scale 
+# with equation 5 using only NN
+EstimatesNN1, UncertaintiesNN1 = nn(
+     ['pH'],
+     Path,
+     OutputCoordinates,
+     PredictorMeasurements,
+     EstDates=EstDates,
+     Equations=[5]
+)
+
+# To estimate phosphate and nitrate using both methods
+# with equations 1 and 16
+EstimatesMixed1, UncertaintiesMixed1 = mixed(
+    ['phosphate', 'nitrate'],
+    Path,
+    OutputCoordinates,
+    PredictorMeasurements,
+    EstDates=EstDates,
+    Equations=[1, 16]
+)
+
+# DEBUG 
+print(EstimatesLIR1['TA2'])
+print(UncertaintiesNN1['pH5'])
+print(EstimatesMixed1['phosphate16'])
+print(UncertaintiesMixed1['nitrate1'])
+
+# More advanced example uses the glodap package 
+# from https://github.com/mvdh7/glodap (see for
+# instructions)
+import glodap
+
 data = glodap.atlantic() 
 
 L = slice(250, 300)
@@ -29,7 +96,7 @@ OutputCoordinates = {
 }
 
 # Optional Unhash the following and customize your
-# measuring uncertainties
+# measurement uncertainties
 #MeasUncerts = {
 #    'sal_u': [0.001], 
 #    'temp_u': [0.3], 
