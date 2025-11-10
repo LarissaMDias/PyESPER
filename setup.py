@@ -16,8 +16,7 @@ setup(
         "scipy", 
         "matplotlib", 
         "PyCO2SYS",
-        "pandas",
-        "kiwisolver"
+        "pandas"
     ],
     entry_points={
         "console_scripts": [
