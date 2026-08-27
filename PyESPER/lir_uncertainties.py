@@ -30,22 +30,23 @@ def process_uncertainties(
             result = np.tile(result, n)
         # Formatting the naming convention of default uncertainties
         if param.replace("_u", "") in PredictorMeasurements:
-            dresult = np.array(
-                [
-                    i * default_factor
-                    for i in PredictorMeasurements[param.replace("_u", "")]
-                ]
+            # Vectorised; this was a per-point Python list comprehension.
+            dresult = (
+                np.asarray(
+                    PredictorMeasurements[param.replace("_u", "")], dtype=np.float64
+                )
+                * default_factor
             )
         else:
             dresult = result
     # Giving defaults in the case where user-provided uncertainties were not provided
     else:
         if param.replace("_u", "") in PredictorMeasurements:
-            result = np.array(
-                [
-                    i * default_factor
-                    for i in PredictorMeasurements[param.replace("_u", "")]
-                ]
+            result = (
+                np.asarray(
+                    PredictorMeasurements[param.replace("_u", "")], dtype=np.float64
+                )
+                * default_factor
             )
             dresult = result
         else:

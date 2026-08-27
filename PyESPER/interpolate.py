@@ -3,25 +3,19 @@ from scipy.interpolate import RegularGridInterpolator, NearestNDInterpolator
 import matplotlib
 import warnings
 
+from PyESPER.kernels import grid_cache
 
-def interpolate(Path, Gdf={}, AAdata={}, Elsedata={}, verbose=False):
+
+def build_interpolants(Gdf):
+    """Build the two region interpolants for one set of (variable, equation) grids.
+
+    Point-independent: this is a pure function of the pre-trained ESPER grids and which
+    combinations were requested, which is why callers memoise it (see
+    PyESPER.kernels.grid_cache). Split out of ``interpolate`` so the coefficient table it
+    produces can also be handed to the numba kernel in ``PyESPER.kernels.lir_forward``
+    without duplicating any of this construction -- the kernel interpolates byte-
+    identical data to what scipy was given.
     """
-    This LIR function performs the interpolation on user-defined data
-
-    Inputs:
-        Gdf: Dictionary of pre-trained data for ESPER v1 (processed)
-        AAdata: Dictionary of user input for Atlantic or Arctic
-        Elsedata: Dictionary of user input not for Atlantic/Arctic
-
-    Outputs:
-        aaLCs: List of points to be interpolated within the Atlantic or Arctic
-            regions
-        aaInterpolants_pre: Scipy interpolant for Atlantic/Arctic region
-        elLCs: List of points to be inteprolated outside of Atlantic/Arctic
-        elInterpolants_pre: Scipy interpolant for outside of Atlantic/Arctic
-    """
-    if verbose:
-        print("Performing local interpolation.")
     Gvalues = list(Gdf.values())
     grid = Gvalues[0]
 
@@ -180,9 +174,37 @@ def interpolate(Path, Gdf={}, AAdata={}, Elsedata={}, verbose=False):
             fill_value=np.nan,
         )
 
-    # run each of the interps in turn
-    interp_aa = build_interpolant(aa_bool)
-    interp_else = build_interpolant(else_bool)
+    return build_interpolant(aa_bool), build_interpolant(else_bool)
+
+
+def interpolate(Path, Gdf={}, AAdata={}, Elsedata={}, verbose=False):
+    """
+    This LIR function performs the interpolation on user-defined data
+
+    Inputs:
+        Gdf: Dictionary of pre-trained data for ESPER v1 (processed)
+        AAdata: Dictionary of user input for Atlantic or Arctic
+        Elsedata: Dictionary of user input not for Atlantic/Arctic
+
+    Outputs:
+        aaLCs: List of points to be interpolated within the Atlantic or Arctic
+            regions
+        aaInterpolants_pre: Scipy interpolant for Atlantic/Arctic region
+        elLCs: List of points to be inteprolated outside of Atlantic/Arctic
+        elInterpolants_pre: Scipy interpolant for outside of Atlantic/Arctic
+
+    Retained for callers that still want scipy-evaluated coefficients split by region.
+    ``lir()`` no longer goes through here: it calls
+    ``PyESPER.kernels.lir_forward.lir_estimates``, which evaluates the same interpolants
+    with a numba kernel and skips the region split entirely.
+    """
+    if verbose:
+        print("Performing local interpolation.")
+
+    interp_aa, interp_else = grid_cache.interpolants(
+        Path, Gdf, lambda: build_interpolants(Gdf)
+    )
+    number_of_equations = len(Gdf)
 
     def process_grid(data_values, interpolant):
         """

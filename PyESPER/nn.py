@@ -43,6 +43,8 @@ def nn(DesiredVariables, Path, OutputCoordinates={}, PredictorMeasurements={}, *
         OutputCoordinates,
         **kwargs
     )
+    # Estimate-only flag captured as a local so it isn't forwarded via **kwargs.
+    compute_uncertainties = kwargs.pop("compute_uncertainties", True)
 
     # Function that processes the input values and default uncertainties and makes sense of it
     Uncertainties_pre, DUncertainties_pre = measurement_uncertainty_defaults(
@@ -100,14 +102,20 @@ def nn(DesiredVariables, Path, OutputCoordinates={}, PredictorMeasurements={}, *
         EstOther
     )
 
-    # Organize output and iteratively calculate uncertainties
-    Uncertainties = organize_nn_output(
-        Path,
-        DesiredVariables,
-        OutputCoordinates,
-        PredictorMeasurements,
-        **kwargs
-    )
+    # Organize output and iteratively calculate uncertainties.
+    # ``compute_uncertainties=False`` skips this step entirely -- it re-runs the whole
+    # net pipeline ~(2*n_predictors+1) times and dominates runtime. Estimates do not
+    # depend on it, so gridded/dask callers that only need estimates turn it off.
+    if compute_uncertainties:
+        Uncertainties = organize_nn_output(
+            Path,
+            DesiredVariables,
+            OutputCoordinates,
+            PredictorMeasurements,
+            **kwargs
+        )
+    else:
+        Uncertainties = None
 
     # Adjust pH and DIC for anthropogenic carbon
     YouHaveBeenWarnedCanth=False

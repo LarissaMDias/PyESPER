@@ -8,41 +8,28 @@ def fetch_data(DesiredVariables, Path):
 
     Outputs:
         LIR_data: List of dictionaries of LIR data
+
+    The four ``Mat_fullgrid/*.mat`` files per variable (~82 MB of coefficients each) are
+    loaded once per process and memoised by
+    :func:`PyESPER.kernels.grid_cache.variable_grids`; this function only assembles the
+    per-variable results into the historical list-of-dicts return shape. Previously every
+    call re-read them from disk, which under ``xr_methods`` meant once per dask chunk.
+
+    Note the ``UncGrid`` element: it is a single grid, not a per-variable dict, so for a
+    multi-variable request it is the *last* variable's -- preserved here exactly as the
+    original behaved. It is only consumed by ``emlr_estimate``, which calls this one
+    variable at a time, so the ambiguity has never been reachable in practice.
     """
+    from PyESPER.kernels.grid_cache import variable_grids
 
-    from scipy.io import loadmat
-    import os
-    import numpy as np
-
-    # Predefine dictionaries of output
     AAIndsCs, GridCoords, Cs = {}, {}, {}
+    UncGrid = None
 
-    # Load necessary files
     for v in DesiredVariables:
-
-        Cs1 = loadmat(
-            os.path.join(Path, f"Mat_fullgrid/LIR_files_{v}_fullCs1.mat"),
-            squeeze_me=True,
-        )
-        Cs2 = loadmat(
-            os.path.join(Path, f"Mat_fullgrid/LIR_files_{v}_fullCs2.mat"),
-            squeeze_me=True,
-        )
-        Cs3 = loadmat(
-            os.path.join(Path, f"Mat_fullgrid/LIR_files_{v}_fullCs3.mat"),
-            squeeze_me=True,
-        )
-        Grid = loadmat(
-            os.path.join(Path, f"Mat_fullgrid/LIR_files_{v}_fullGrids.mat")
-        )
-
-        # Extract and store all arrays
-        UncGrid = Grid["UncGrid"][0][0]
-        GridCoords[v] = Grid["GridCoords"]
-        AAIndsCs[v] = Grid["AAIndsM"]
-
-        # Combine along axis 1, then store each layer in list
-        Csdata = np.concatenate((Cs1["Cs1"], Cs2["Cs2"], Cs3["Cs3"]), axis=1)
-        Cs[v] = [Csdata[:, :, i] for i in range(Csdata.shape[2])]
+        entry = variable_grids(v, Path)
+        GridCoords[v] = entry["grid_coords"]
+        AAIndsCs[v] = entry["aainds"]
+        Cs[v] = entry["cs"]
+        UncGrid = entry["uncgrid"]
 
     return [GridCoords, Cs, AAIndsCs, UncGrid]

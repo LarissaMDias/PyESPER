@@ -2,25 +2,8 @@ import numpy as np
 from matplotlib.path import Path
 
 
-def input_AAinds(C={}, code={}, verbose=False):
-    """
-    Separates user-defined inpus into Atlantic and Arctic regions or other
-        regions, defined as in ESPERv1 for MATLAB.
-
-    Inputs:
-        C: Dictionary of pre-adjusted grid coordinates
-        code: Dictionary of iterated equation-case scenario inputs for
-            user-requested variable-equation cases
-
-    Outputs:
-        AAdata: Dictionary of code data separated for areas encompassed by the
-            Atlantic and Arctic Oceans only
-        Elsedata: Dictionary of code data separated for areas not encompassed by
-            the Atlantic and Arctic Oceans
-    """
-    if verbose:
-        print("Classifying inputs by ocean basin.")
-
+def _polygons():
+    """The ESPERv1 Atlantic/Arctic polygons, in (longitude, latitude) degrees."""
     LNAPoly = np.array(
         [
             [300.0, 0.0],
@@ -66,17 +49,49 @@ def input_AAinds(C={}, code={}, verbose=False):
         [[0.5, -39.9], [0.99, -39.9], [0.99, -40.001], [0.5, -40.001]]
     )
 
-    polygons = [LNAPoly, LSAPoly, LNAPolyExtra, LSAPolyExtra, LNOPoly, xtra]
+    return [LNAPoly, LSAPoly, LNAPolyExtra, LSAPolyExtra, LNOPoly, xtra]
 
-    longitude_array = np.asarray(C["longitude"], dtype=np.float64) % 360.0
-    latitude_array = np.asarray(C["latitude"], dtype=np.float64)
+
+def atlantic_mask(longitude, latitude):
+    """Boolean mask: True where a point falls in the ESPERv1 Atlantic/Arctic region.
+
+    Split out of :func:`input_AAinds` so callers that only need the classification --
+    ``lir()`` selects each point's coefficient set from it, rather than physically
+    splitting every input column in two -- do not have to build the split dicts.
+    """
+    longitude_array = np.asarray(longitude, dtype=np.float64) % 360.0
+    latitude_array = np.asarray(latitude, dtype=np.float64)
     points = np.column_stack((longitude_array, latitude_array))
 
-    aa_bool = np.zeros(points.shape[0], dtype=np.bool_)
-    for poly in polygons:
-        path = Path(poly)
-        aa_bool |= path.contains_points(points)
+    mask = np.zeros(points.shape[0], dtype=np.bool_)
+    for polygon in _polygons():
+        mask |= Path(polygon).contains_points(points)
+    return mask
 
+
+def input_AAinds(C={}, code={}, verbose=False):
+    """
+    Separates user-defined inpus into Atlantic and Arctic regions or other
+        regions, defined as in ESPERv1 for MATLAB.
+
+    Inputs:
+        C: Dictionary of pre-adjusted grid coordinates
+        code: Dictionary of iterated equation-case scenario inputs for
+            user-requested variable-equation cases
+
+    Outputs:
+        AAdata: Dictionary of code data separated for areas encompassed by the
+            Atlantic and Arctic Oceans only
+        Elsedata: Dictionary of code data separated for areas not encompassed by
+            the Atlantic and Arctic Oceans
+
+    ``lir()`` no longer uses this -- it classifies points with :func:`atlantic_mask` and
+    lets the kernel pick a coefficient set per point -- but ``pH_adjustment`` still does.
+    """
+    if verbose:
+        print("Classifying inputs by ocean basin.")
+
+    aa_bool = atlantic_mask(C["longitude"], C["latitude"])
     else_bool = ~aa_bool
     aa_inds_int = aa_bool.astype(np.int8)
 

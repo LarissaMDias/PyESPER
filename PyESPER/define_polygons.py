@@ -42,23 +42,17 @@ def define_polygons(C={}):
     Bering = np.array([[173, 70], [210, 70], [210, 62.5], [173, 62.5], [173, 70]])
     beringpath = mpltPath.Path(Bering)
     beringconditions = beringpath.contains_points(np.column_stack((longitude, latitude)))
-    SAtlInds, SoAfrInds = [], []
-    for i, z in zip(longitude, latitude):
-        # Check if the conditions are met for Southern Atlantic
-        if (-34 > z > -44):  # Check latitude first to reduce unnecessary checks
-            if i > 290 or i < 20:
-                SAtlInds.append('True')   
-            else:
-                SAtlInds.append('False')
 
-            # Check if the condition is met for Southern Africa
-            if 19 < i < 27:
-                SoAfrInds.append('True')
-            else:
-                SoAfrInds.append('False')
-        else:
-            SAtlInds.append('False')
-            SoAfrInds.append('False')
+    # Vectorised replacement for the original per-point Python loop, which built two
+    # n_points-long lists of the *strings* 'True'/'False' and left the caller to compare
+    # them back to booleans. At production point counts that loop, and the numpy string
+    # array it forced ``process_netresults`` to materialise, cost more than the neural
+    # nets themselves. The inequalities below are transcribed strictly (all four bounds
+    # exclusive, matching the original ``-34 > z > -44`` / ``i > 290 or i < 20`` /
+    # ``19 < i < 27``), and the result is now a plain boolean array.
+    in_south_band = (latitude > -44) & (latitude < -34)
+    SAtlInds = in_south_band & ((longitude > 290) | (longitude < 20))
+    SoAfrInds = in_south_band & (longitude > 19) & (longitude < 27)
 
     # Create Dictionary with boolean indicators
     df = {'AAInds': AAIndsM, 'BeringInds': beringconditions, 'SAtlInds': SAtlInds, \

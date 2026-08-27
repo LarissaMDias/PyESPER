@@ -9,10 +9,20 @@ _interpolator_cache = {}
 def simplecantestimatelr(EstDates, longitude, latitude, depth, data_path=None):
     global _interpolator_cache
 
+    packaged_csv = Path(__file__).parent / "SimpleCantEstimateLR_full.csv"
     if data_path is None:
-        data_path = Path(__file__).parent / "SimpleCantEstimateLR_full.csv"
+        data_path = packaged_csv
     else:
         data_path = Path(data_path)
+        # Callers (adjust_pH_DIC / pH_DIC_nn_adjustment) forward the top-level ``Path``
+        # argument, which is a *directory* prefix (holds Mat_fullgrid/ etc.), not this
+        # CSV. If what we were handed is a directory, or a non-existent file, look for
+        # the CSV inside it and otherwise fall back to the packaged copy.
+        if data_path.is_dir():
+            candidate = data_path / "SimpleCantEstimateLR_full.csv"
+            data_path = candidate if candidate.exists() else packaged_csv
+        elif not data_path.exists():
+            data_path = packaged_csv
 
     cache_key = str(data_path)
 

@@ -33,10 +33,9 @@ def lir(
     from PyESPER.temperature_define import temperature_define
     from PyESPER.iterations import iterations
     from PyESPER.fetch_data import fetch_data
-    from PyESPER.input_AAinds import input_AAinds
     from PyESPER.coefs_AAinds import coefs_AAinds
-    from PyESPER.interpolate import interpolate
-    from PyESPER.organize_data import organize_data
+    from PyESPER.input_AAinds import atlantic_mask
+    from PyESPER.kernels.lir_forward import lir_estimates
     from PyESPER.emlr_estimate import emlr_estimate
     from PyESPER.adjust_pH_DIC import adjust_pH_DIC
     from PyESPER.pH_adjustment import pH_adjustment
@@ -54,6 +53,16 @@ def lir(
     Equations, n, verbose, EstDates, C, PerKgSwTF, MeasUncerts = defaults(
         DesiredVariables, PredictorMeasurements, OutputCoordinates, **kwargs
     )
+    # ``verbose`` is already captured above; drop it from kwargs so the downstream
+    # calls that take it positionally (e.g. adjust_pH_DIC) don't also receive it via
+    # **kwargs. Capture our own estimate-only flag as a local for the same reason.
+    kwargs.pop("verbose", None)
+    compute_uncertainties = kwargs.pop("compute_uncertainties", True)
+    # Coefficients are part of lir()'s return contract, but nothing inside this package
+    # consumes them (emlr_estimate takes them and never reads them), and materialising
+    # them costs 6 float64 per point per combination. Callers that only want estimates
+    # -- xr_methods does -- can turn them off.
+    want_coefficients = kwargs.pop("want_coefficients", True)
 
     # Processing the input values (Uncertainties_pre) and calculating default
     # measurement uncertainties
@@ -87,41 +96,50 @@ def lir(
     # Loading the pre-trained algorithm data
     LIR_data = fetch_data(DesiredVariables, Path)
 
-    # Separating user-defined coordinates into Atlantic and Arctic (AAdata)
-    # or other regions (Elsedata)
-    AAdata, Elsedata = input_AAinds(C, code, verbose=verbose)
-
     # Separating ESPER pre-defined coefficients into Atlantic and Arctic or other regions
     Gdf, CsDesired = coefs_AAinds(Equations, LIR_data)
 
-    # Interpolate
-    aaLCs, aaInterpolants_pre, elLCs, elInterpolants_pre = interpolate(
-        Path, Gdf, AAdata, Elsedata, verbose=verbose
-    )
-
-    # Organize data and compute estimates
-    Estimate, CoefficientsUsed = organize_data(
-        aaLCs,
-        elLCs,
-        aaInterpolants_pre,
-        elInterpolants_pre,
-        Gdf,
-        AAdata,
-        Elsedata,
-    )
-
-    # Calculate initial uncertainties for lirs
-    Uncertainties = emlr_estimate(
-        Equations,
-        DesiredVariables,
+    # Interpolate the coefficients and apply the linear model in one pass.
+    #
+    # This used to be three passes -- input_AAinds() split every input column into an
+    # Atlantic and a non-Atlantic copy per combination, interpolate() evaluated scipy's
+    # RegularGridInterpolator separately on each half, and organize_data() concatenated,
+    # argsorted and reindexed them back into input order. Together they were ~91% of an
+    # LIR call. The kernel selects each point's coefficient set by mask instead, so the
+    # split never happens and points never leave input order. Results are bit-for-bit
+    # identical; see PyESPER.kernels.lir_forward.
+    if verbose:
+        print("Performing local interpolation.")
+    in_atlantic = atlantic_mask(C["longitude"], C["latitude"])
+    Estimate, CoefficientsUsed = lir_estimates(
         Path,
-        OutputCoordinates,
-        PredictorMeasurements,
-        unc_combo_dict,
-        dunc_combo_dict,
-        Coefficients=CoefficientsUsed,
-        verbose=verbose,
+        Gdf,
+        code,
+        C["longitude"],
+        C["latitude"],
+        C["depth"],
+        in_atlantic,
+        want_coefficients=want_coefficients,
     )
+
+    # Calculate initial uncertainties for lirs.
+    # ``compute_uncertainties=False`` skips this (it re-loads the ~300 MB LIR grids and
+    # runs the Numba uncertainty kernel); estimates do not depend on it, so gridded/dask
+    # callers that only need estimates turn it off.
+    if compute_uncertainties:
+        Uncertainties = emlr_estimate(
+            Equations,
+            DesiredVariables,
+            Path,
+            OutputCoordinates,
+            PredictorMeasurements,
+            unc_combo_dict,
+            dunc_combo_dict,
+            Coefficients=CoefficientsUsed,
+            verbose=verbose,
+        )
+    else:
+        Uncertainties = None
 
     # First of three steps to adjust pH and DIC for
     # anthropogenic carbon, as needed

@@ -14,18 +14,37 @@ def process_netresults(Equations, code={}, df={}, EstAtl={}, EstOther={}):
 
     Output:
         Estimate: Dictionary of estimates for each combination
+
+    Notes
+    -----
+    This is a vectorized rewrite of the original per-point Python loops. Every
+    ``np.tile(...)`` in the original smoothing loops tiled a *scalar* to shape
+    ``(1, len(Equations))`` and then immediately re-extracted index ``[0][0]`` --
+    i.e. the tile width never affected the result, so the tiling was pure
+    overhead. Replacing the per-point loops with whole-array numpy expressions
+    is therefore numerically identical to the original, just without the
+    O(n_points) Python-level `np.tile`/`np.mean` call overhead that dominated
+    runtime at large n_points.
     """
 
     import numpy as np
 
-    # Function to provide the mean of values when needed
+    def _as_bool(values):
+        """Boolean view of a region indicator, accepting the legacy string form."""
+        arr = np.asarray(values)
+        if arr.dtype.kind in "US":
+            return arr == "True"
+        return arr.astype(bool)
+
+    # Function to provide the mean of values when needed. `estimates[key]` is
+    # an (n_points, 4) array (stacked ensemble members from run_nets); a single
+    # vectorized mean over axis=1 replaces the previous per-point `np.mean()`
+    # call in a Python loop.
     def process_estimates(estimates):
-        keys = list(estimates.keys())
-        values = list(estimates.values())
-        result = {}
-        for i, key in enumerate(keys):
-            result[key] = [np.mean(values[i][v]) for v in range(len(values[0]))]
-        return result
+        return {
+            key: np.asarray(value, dtype=float).mean(axis=1)
+            for key, value in estimates.items()
+        }
 
     Esta = process_estimates(EstAtl)
     Esto = process_estimates(EstOther)
@@ -40,66 +59,47 @@ def process_netresults(Equations, code={}, df={}, EstAtl={}, EstOther={}):
         code[i]["SoAfrInds"] = df["SoAfrInds"]
 
     for codename, codedata in code.items():
-        # Defining empty lists for data from each regions
-        Estatl, Estb, eb2, Estsat, esafr = [], [], [], [], []
         aainds, beringinds, satlinds, latitude, safrinds = (
             codedata[key] for key in ["AAInds", "BeringInds", "SAtlInds", "Latitude", "SoAfrInds"]
         )
-        Estatl = [Esta[codename][i] if aa_ind else Esto[codename][i] for i, aa_ind in enumerate(aainds)]
-        
+        latitude = np.asarray(latitude, dtype=float)
+        aainds = np.asarray(aainds, dtype=bool)
+        beringinds = np.asarray(beringinds, dtype=bool)
+        # define_polygons now returns real boolean arrays. Older versions returned lists
+        # of the strings 'True'/'False'; accept both so a caller passing a hand-built
+        # `df` (or an older define_polygons) keeps working.
+        satlinds_bool = _as_bool(satlinds)
+        safrinds_bool = _as_bool(safrinds)
+
+        esta = Esta[codename]
+        esto = Esto[codename]
+
+        Estatl = np.where(aainds, esta, esto)
+
         # Smoothing for the Atlantic
-        for lenatl in range(0, len(Estatl)):
-            repeated_values = (latitude[lenatl]-62.5)/7.5
-            B = np.tile(repeated_values, (1, len(Equations)))
-            C = Esta[codename][lenatl]
-            B1 = C * B
-            repeated_values2 = (70-latitude[lenatl])/7.5
-            D = np.tile(repeated_values2, (1, len(Equations)))
-            E = Esto[codename][lenatl]
-            B2 = E * D
-            Estb.append(B1[0][0] + B2[0][0])
-    
-        eb2 = [Estb[j] if b_ind else Estatl[j] for j, b_ind in enumerate(beringinds)]
+        Estb = esta * ((latitude - 62.5) / 7.5) + esto * ((70.0 - latitude) / 7.5)
+
+        eb2 = np.where(beringinds, Estb, Estatl)
+
         # Smoothing for the Bering
-        for n in range(0, len(satlinds)):   
-            repeated_values = (latitude[n]+44)/10
-            F1 = Esta[codename][n]
-            F = np.tile(repeated_values, (1, len(Equations)))
-            G1 = F1 * F
-            repeated_values2 = (-34-latitude[n])/10
-            H1 = Esto[codename][n]
-            H = np.tile(repeated_values2, (1, len(Equations)))
-            G2 = H1 * H
-            Estsat.append(G1[0][0] + G2[0][0])
+        Estsat = esta * ((latitude + 44.0) / 10.0) + esto * ((-34.0 - latitude) / 10.0)
 
         EstA[codename], EstB[codename], EB2[codename], ESat[codename] = Estatl, Estb, eb2, Estsat
-        
-    # Regional processing for S. Atlantic
-        ESat2[codename] = [
-            ESat[codename][i] if satlinds[i] == "True" else EB2[codename][i]
-            for i in range(len(satlinds))
-        ]
-            
-    # Regional processing for S. Africa
-        for s in range(0, len(safrinds)):
-            repeated_values = (27-df["Lon"][s])/8
-            F1 = ESat2[codename][s]
-            F = np.tile(repeated_values, (1, len(Equations)))
-            G1 = F1*F
-            repeated_values2 = (df["Lon"][s]-19)/8
-            H1 = Esto[codename][s]
-            H = np.tile(repeated_values2, (1, len(Equations)))
-            G2 = H1 * H
-            esafr.append(G1[0][0] + G2[0][0])
-            
+
+        # Regional processing for S. Atlantic
+        ESat2[codename] = np.where(satlinds_bool, ESat[codename], EB2[codename])
+
+        # Regional processing for S. Africa
+        lon = np.asarray(df["Lon"], dtype=float)
+        esafr = ESat2[codename] * ((27.0 - lon) / 8.0) + esto * ((lon - 19.0) / 8.0)
         ESaf[codename] = esafr
 
-        Estimate[codename] = [
-            ESaf[codename][i] if safrinds[i] == "True" else ESat2[codename][i]
-            for i in range(len(safrinds))
-        ]
-        
-    # Bookkeeping blanks back to NaN as needed
-    Estimate = {k: ('NaN' if v == '' else v) for k, v in Estimate.items()}
-            
+        Estimate[codename] = np.where(safrinds_bool, ESaf[codename], ESat2[codename])
+
+    # Values stay as float64 ndarrays. They used to be converted back to Python lists
+    # here to preserve an older return-type contract, but every consumer in this package
+    # immediately calls np.array/np.asarray on them again (pH_DIC_nn_adjustment,
+    # final_formatting, mixed, xr_methods), so the round-trip only cost memory and time
+    # -- at 200k points it was a measurable fraction of the whole call, against a neural
+    # net evaluation that now takes well under a tenth of a second.
     return Estimate

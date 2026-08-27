@@ -26,3 +26,4 @@ from .organize_data import organize_data
 from .lir import lir
 from .nn import nn
 from .mixed import mixed
+from .xr_methods import lir_xr, nn_xr, mixed_xr

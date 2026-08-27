@@ -20,16 +20,30 @@ def mixed(DesiredVariables, Path, OutputCoordinates={}, PredictorMeasurements={}
 
     # Fetch estimates and uncertainties from PyESPER_LIR and PyESPER_NN
     EstimatesLIR, _, UncertaintiesLIR = lir(DesiredVariables, Path, OutputCoordinates, PredictorMeasurements, **kwargs)
+    # nn() has no coefficient output, so this kwarg is LIR-only.
+    kwargs.pop("want_coefficients", None)
     EstimatesNN, UncertaintiesNN = nn(DesiredVariables, Path, OutputCoordinates, PredictorMeasurements, **kwargs)
 
     Estimates, Uncertainties = {}, {}
+    # Uncertainties are None when the caller passed compute_uncertainties=False (which
+    # the gridded xr_methods path always does). Previously this indexed them
+    # unconditionally, so mixed_xr raised TypeError on every call.
+    have_uncertainties = UncertaintiesLIR is not None and UncertaintiesNN is not None
+
     for est_type in EstimatesLIR.keys():
-        estimates_lir = np.array(EstimatesLIR[est_type]).flatten() # need to flatten to match nn output shape
-        estimates_nn = np.array(EstimatesNN[est_type]).astype(np.float64) # DICx - where x = equation number - returns string values which prevents proper averaging with LIR estimates
-        uncertainties_lir = np.array(UncertaintiesLIR[est_type])
-        uncertainties_nn = np.array(UncertaintiesNN[est_type])
-        Estimates[est_type] = np.mean([estimates_lir, estimates_nn], axis=0).tolist()
-        Uncertainties[est_type] = np.minimum(uncertainties_lir, uncertainties_nn).tolist()
+        # flatten(): the LIR path returns per-combination arrays that may carry a
+        # trailing length-1 axis, unlike the NN path.
+        estimates_lir = np.asarray(EstimatesLIR[est_type], dtype=np.float64).flatten()
+        estimates_nn = np.asarray(EstimatesNN[est_type], dtype=np.float64)
+        Estimates[est_type] = 0.5 * (estimates_lir + estimates_nn)
+        if have_uncertainties:
+            Uncertainties[est_type] = np.minimum(
+                np.asarray(UncertaintiesLIR[est_type], dtype=np.float64),
+                np.asarray(UncertaintiesNN[est_type], dtype=np.float64),
+            )
+
+    if not have_uncertainties:
+        Uncertainties = None
 
     toc = time.perf_counter()
     print(f"PyESPER_Mixed took {toc - tic:0.4f} seconds, or {(toc-tic)/60:0.4f} minutes to run")    

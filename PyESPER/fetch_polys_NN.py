@@ -7,6 +7,9 @@ def fetch_polys_NN(Path, DesiredVariables):
     from scipy.io import loadmat
     import os
 
+    from PyESPER.paths import data_root
+
+    Path = data_root(Path)
     for v in DesiredVariables:
         fname = os.path.join(Path, f"Uncertainty_Polys/NN_files_{v}_Unc_Poly.mat")
         NNs = loadmat(fname)

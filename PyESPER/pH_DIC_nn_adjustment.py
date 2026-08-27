@@ -58,13 +58,25 @@ def pH_DIC_nn_adjustment(Path, DesiredVariables, Estimates, YouHaveBeenWarnedCan
             Cant, Cant2002 = simplecantestimatelr(EstDates, longitude, latitude, depth, Path)
             YouHaveBeenWarnedCanth = True
     
+        # Anthropogenic-carbon offset, applied to DIC only.
+        #
+        # This used to read ``np.where(np.isnan(a), "nan", a + Cant - Cant2002)``, which
+        # mixes a Python *string* with a float array: numpy promotes the whole result to
+        # a '<U32' unicode array, so every DIC estimate came back as text and the
+        # following ``.tolist()`` built one Python string object per point. At 200k
+        # points that single line was about a third of the entire call, and it is the
+        # reason ``mixed()`` carries an explicit ``.astype(np.float64)`` workaround.
+        #
+        # The ``np.where`` was also redundant: where ``a`` is NaN, ``a + cant_diff`` is
+        # already NaN. Dropping both is bit-exact -- numpy's float-to-string conversion
+        # round-trips float64 exactly, so the values the old code produced (once parsed
+        # back by the caller) are identical to these.
+        cant_diff = np.asarray(Cant, dtype=float) - np.asarray(Cant2002, dtype=float)
         for combo, a in zip(combos2, values2):
-            a = np.array(a, dtype=float)
+            a = np.asarray(a, dtype=float)
             if combo.startswith("DIC"):
-                a = np.where(np.isnan(a), "nan", a + Cant - Cant2002)
-                Cant_adjusted[combo] = a.tolist()
-            else:
-                Cant_adjusted[combo] = a.tolist()
+                a = a + cant_diff
+            Cant_adjusted[combo] = a
         
         # Extra perturbation for pH
         if "pH" in DesiredVariables:   
@@ -167,13 +179,13 @@ def pH_DIC_nn_adjustment(Path, DesiredVariables, Estimates, YouHaveBeenWarnedCan
                     else:
                         pHadj = np.array(values)
                         
-                    Cant_adjusted[combo] = pHadj.tolist()
+                    Cant_adjusted[combo] = np.asarray(pHadj, dtype=float)
                         
                 # Print warnings if any
                 if warning:
                     print(warning[0])  
                         
-    elif "EstDates" not in kwargs and ("DIC" or "pH" in DesiredVariables) and VerboseTF and not YouHaveBeenWarnedCanth:
+    elif "EstDates" not in kwargs and ("DIC" in DesiredVariables or "pH" in DesiredVariables) and VerboseTF and not YouHaveBeenWarnedCanth:
         print("Warning: DIC or pH is a requested output but the user did not provide dates for the desired estimates. The estimates will be specific to 2002.0 unless the optional EstDates input is provided (recommended).")
         YouHaveBeenWarnedCanth = True
                         
@@ -182,8 +194,9 @@ def pH_DIC_nn_adjustment(Path, DesiredVariables, Estimates, YouHaveBeenWarnedCan
             print("Recalculating the pH to be appropriate for pH values calculated from TA and DIC.")
         for combo, pH_values in zip(combos2, values2):
             if combo.startswith("pH"):
-                pH_adjcalc_Est = [(pH + 0.3168) / 1.0404 for pH in pH_values]
-                Cant_adjusted[combo] = pH_adjcalc_Est
+                Cant_adjusted[combo] = (
+                    np.asarray(pH_values, dtype=float) + 0.3168
+                ) / 1.0404
                         
     return Cant_adjusted
 
