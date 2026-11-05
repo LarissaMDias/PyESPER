@@ -172,7 +172,7 @@ def pH_adjustment(
                 if warning:
                     print(warning[0]) 
                         
-    elif "EstDates" not in kwargs and ("DIC" or "pH" in DesiredVariables) and not VerboseTF and YouHaveBeenWarnedCanth:
+    elif "EstDates" not in kwargs and ("DIC" in DesiredVariables or "pH" in DesiredVariables) and not VerboseTF and YouHaveBeenWarnedCanth:
         print("Warning: DIC or pH is a requested output but the user did not provide dates for the desired esimtates. The estimates "
             "will be specific to 2002.0 unless the optional EstDates input is provided (recommended).")
 

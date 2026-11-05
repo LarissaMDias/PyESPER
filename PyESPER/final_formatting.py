@@ -14,7 +14,7 @@ def final_formatting(DesiredVariables, Cant_adjusted={}, Est_pre={}):
     """
 
     # Conditional to whether anthropogenic carbon was needed or not
-    if ("pH" or "DIC") in DesiredVariables:
+    if "pH" in DesiredVariables or "DIC" in DesiredVariables:
         Estimates=Cant_adjusted
         print("anthropogenic carbon has been incorporated into some estimates")
     else:
