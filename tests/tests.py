@@ -11,6 +11,7 @@ import glodap
 import pandas as pd
 import numpy as np
 from scipy.io import savemat
+import json
 
 # Setting the project root
 from pathlib import Path
@@ -135,11 +136,12 @@ def test_small():
              EstDates=EstDates,
         )
 
-    assert len(results) == 10
+    expected_results = len(scenarios) * 2 * 3
+    assert len(results) == expected_results
 
 
     NNEstimatesScenario3, NNUncertaintiesScenario3 = results[
-        ("Scenario3", "equation_7_LIR")
+        ("Scenario3", "equation_7_NN")
     ]
     print("pH equation 7:", NNEstimatesScenario3["pH7"])
     
@@ -147,5 +149,17 @@ def test_small():
         ("Scenario3", "equations_1_to_16_Mixed")
     ]
     print("pH equation 7 from simultaneous run:", MixedEstimatesAll["pH7"])
+    
+    with open("esper_comparison_results.json", encoding="utf-8") as f:
+        data = json.load(f)
+
+    print(data["results"].keys())
+
+    matlab_pH = np.asarray(
+        data["results"]["Scenario3"]["equation_7NN"]["estimates"]["pH"],
+        dtype=float,
+    )
+
+    print(matlab_pH)
 
 test_small()
