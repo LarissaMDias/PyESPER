@@ -31,7 +31,7 @@ def PyESPER_NN(X): #ESPER_oxygen_15_Atl_1
         return y
 
     def tansig_apply(n):
-        return 2 / (1 + np.exp(-2 * n)) - 1
+        return np.tanh(n)
 
     def mapminmax_reverse(y, settings={}):
         x = np.subtract(y, settings['ymin'])
