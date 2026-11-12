@@ -1,3 +1,5 @@
+from errors import CustomError
+
 def defaults(
     DesiredVariables, PredictorMeasurements={}, OutputCoordinates={}, **kwargs
 ):
