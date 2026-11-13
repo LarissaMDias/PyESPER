@@ -1,5 +1,3 @@
-from errors import CustomError
-
 def defaults(
     DesiredVariables, PredictorMeasurements={}, OutputCoordinates={}, **kwargs
 ):
@@ -25,6 +23,7 @@ def defaults(
     """
 
     import numpy as np
+    from PyESPER.errors import errors
 
     # Check and define Equations based on user-defined kwargs, or use default values
     Equations = kwargs.get("Equations", list(range(1, 17)))

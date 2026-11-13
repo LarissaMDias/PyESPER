@@ -41,8 +41,8 @@ def pH_adjustment(
         Cant_adjusted: Dictionary of adjusted values for Cant for each combination
     """
 
-    import numpy as np
-    import seawater as sw
+    import numpy as np 
+    import PyESPER.eos80_jit as sw  # grab local copies of NJIT'd seawater
     import PyCO2SYS as pyco2
     from PyESPER.inputdata_organize import inputdata_organize
     from PyESPER.temperature_define import temperature_define
@@ -116,8 +116,11 @@ def pH_adjustment(
                     EstAlk = np.array(alkest["TA16"])
                     EstAlk = np.transpose(EstAlk)
                     EstSi = EstP = [0] * len(EstAlk)
-                    # Calculating pressure using the sw package
-                    Pressure = sw.pres(OutputCoordinates["depth"], OutputCoordinates["latitude"])
+                    # Not using seawater package anymore, rather jit'd funcs.
+                    Pressure = sw.pres(
+                        np.asarray(OutputCoordinates["depth"], dtype=np.float64),
+                        np.asarray(OutputCoordinates["latitude"], dtype=np.float64)
+                    )
                     Est = np.array(values)
                     Est = np.transpose(Est)
                     Est = Est[0]

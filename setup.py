@@ -13,9 +13,9 @@ setup(
     package_data={
         "PyESPER": ["*.csv"],
     },
+    include_package_data=True,  # make sure the data files are installed
     install_requires=[
         "numpy",
-        # "seawater",
         "scipy",
         "matplotlib",
         "PyCO2SYS",

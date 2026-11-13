@@ -62,13 +62,15 @@ def run_nets(DesiredVariables, Equations, code={}):
             P[name] = [[[cosd, sind, lat, depth] + variables]]
             netstimateAtl, netstimateOther = [], []
             for n in range(1, 5):   
-                fOName = f"NeuralNetworks.ESPER_{v}_{e}_Other_{n}"
-                fAName = f"NeuralNetworks.ESPER_{v}_{e}_Atl_{n}"
-                moda = importlib.import_module(fAName)
-                modo = importlib.import_module(fOName)
-                from importlib import reload
-                reload(moda)
-                reload(modo)   
+                # have to do package-level imports to avoid conflicts with
+                # wherever the working directory happens to be
+                fOName = f".NeuralNetworks.ESPER_{v}_{e}_Other_{n}"
+                fAName = f".NeuralNetworks.ESPER_{v}_{e}_Atl_{n}"
+                moda = importlib.import_module(fAName, package="PyESPER")
+                modo = importlib.import_module(fOName, package="PyESPER")
+                # from importlib import reload # seems needless?
+                # reload(moda)
+                # reload(modo)   
                 # Running the nets
                 netstimateAtl.append(moda.PyESPER_NN(P[name]))
                 netstimateOther.append(modo.PyESPER_NN(P[name]))

@@ -27,7 +27,7 @@ def pH_DIC_nn_adjustment(Path, DesiredVariables, Estimates, YouHaveBeenWarnedCan
     from PyESPER.define_polygons import define_polygons
     from PyESPER.run_nets import run_nets
     from PyESPER.process_netresults import process_netresults
-    import seawater as sw
+    import PyESPER.eos80_jit as sw  # grab local copies of NJIT'd seawater
     import PyCO2SYS as pyco2
 
     # Interpreting kwargs and setting defaults if needed
@@ -122,7 +122,10 @@ def pH_DIC_nn_adjustment(Path, DesiredVariables, Estimates, YouHaveBeenWarnedCan
                      )
                     EstAlk = np.array(alkest["TA16"])
                     EstSi = EstP = [0] * len(EstAlk)
-                    Pressure = sw.pres(OutputCoordinates["depth"], OutputCoordinates["latitude"])
+                    Pressure = sw.pres(
+                        np.asarray(OutputCoordinates["depth"], dtype=np.float64),
+                        np.asarray(OutputCoordinates["latitude"], dtype=np.float64)
+                    )
                     Est = np.array(values)
                         
                     # CO2SYS calculations
