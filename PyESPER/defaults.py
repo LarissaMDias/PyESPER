@@ -63,7 +63,7 @@ def defaults(
     if MeasUncerts:
         if max(len(v) for v in MeasUncerts.values()) != n:
             if min(len(v) for v in MeasUncerts.values()) != 1:
-                raise CustomError(
+                raise ValueError( #CustomError kept throwing lint errors
                     "MeasUncerts must be undefined, a vector with the same number of elements as "
                     "PredictorMeasurements has columns, or a matrix of identical dimension to PredictorMeasurements."
                 )
