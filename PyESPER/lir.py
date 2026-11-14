@@ -1,6 +1,5 @@
 def lir(
     DesiredVariables,
-    Path,
     OutputCoordinates={},
     PredictorMeasurements={},
     **kwargs,
@@ -51,7 +50,7 @@ def lir(
 
     # Setting defaults for various input parameters, including defining kwargs and
     # ensuring that coordinates use the correct format
-    Equations, n, verbose, EstDates, C, PerKgSwTF, MeasUncerts = defaults(
+    Equations, n, verbose, EstDates, C, PerKgSwTF, MeasUncerts, Path = defaults(
         DesiredVariables, PredictorMeasurements, OutputCoordinates, **kwargs
     )
 

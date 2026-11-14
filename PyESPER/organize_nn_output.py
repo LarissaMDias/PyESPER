@@ -1,4 +1,4 @@
-def organize_nn_output(Path, DesiredVariables, OutputCoordinates={}, PredictorMeasurements={},  **kwargs):
+def organize_nn_output(DesiredVariables, OutputCoordinates={}, PredictorMeasurements={},  **kwargs):
 
     """
     Iteratively calculate uncertainties
@@ -36,7 +36,7 @@ def organize_nn_output(Path, DesiredVariables, OutputCoordinates={}, PredictorMe
         var = [var] # Wrap single variable in a list
         keys = ["sal_u", "temp_u", "phosphate_u", "nitrate_u", "silicate_u", "oxygen_u"]
 
-        Equations, n, VerboseTF, EstDates, C, PerKgSwTF, MeasUncerts = defaults(
+        Equations, n, VerboseTF, EstDates, C, PerKgSwTF, MeasUncerts, Path = defaults(
             var,
             PredictorMeasurements,
             OutputCoordinates,
@@ -128,7 +128,7 @@ def organize_nn_output(Path, DesiredVariables, OutputCoordinates={}, PredictorMe
         
             # Run preprocess_applynets for perturbed and default data
             VTF = False
-            Eqs2, n2, VerbTF2, EstDates2, C2, PerKgSwTF2, MeasUncerts2 = defaults(
+            Eqs2, n2, VerbTF2, EstDates2, C2, PerKgSwTF2, MeasUncerts2, Path = defaults(
                 var,
                 PMs2,
                 OutputCoordinates,

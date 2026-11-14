@@ -20,7 +20,6 @@ PredictorMeasurements = {
     "silicate": [50, 21],
 }
 EstDates = [2024, 2024]
-Path = str(pathlib.Path(__file__).resolve().parent.parent)
 
 AllVariables = ["TA", "DIC", "pH", "phosphate", "nitrate", "silicate", "oxygen"]
 AllEquations = list(range(1, 17))
@@ -377,7 +376,6 @@ def test_all_combinations_lir(Variable, Equation):
     """Is PyESPER giving sufficiently-identical results to ESPER? (lir)"""
     Estimates, Coefficients, Uncertainties = lir(
         [Variable],
-        Path,
         OutputCoordinates,
         PredictorMeasurements,
         EstDates=EstDates,
@@ -394,7 +392,6 @@ def test_all_combinations_nn(Variable, Equation):
     """Is PyESPER giving sufficiently-identical results to ESPER? (nn)"""
     Estimates, Uncertainties = nn(
         [Variable],
-        Path,
         OutputCoordinates,
         PredictorMeasurements,
         EstDates=EstDates,
@@ -411,7 +408,6 @@ def test_all_combinations_mixed(Variable, Equation):
     """Is PyESPER giving sufficiently-identical results to ESPER? (mixed)"""
     Estimates, Uncertainties = mixed(
         [Variable],
-        Path,
         OutputCoordinates,
         PredictorMeasurements,
         EstDates=EstDates,
@@ -426,7 +422,6 @@ def test_pr_13_nn_short_circuit():
     """Does NN correctly apply the Cant adjustment for DIC when pH is missing from the request? (adapted from PR by CatManJr)"""
     Estimates1, Uncertainties1 = nn(
         ["DIC", "TA"],
-        Path,
         OutputCoordinates,
         PredictorMeasurements,
         Equations=[7],
@@ -434,7 +429,6 @@ def test_pr_13_nn_short_circuit():
     )
     Estimates2, Uncertainties2 = nn(
         ["DIC", "TA", "pH"],
-        Path,
         OutputCoordinates,
         PredictorMeasurements,
         Equations=[7],
@@ -448,7 +442,6 @@ def test_pr_13_lir_short_circuit():
     """Does LIR correctly apply the Cant adjustment for DIC when pH is missing from the request? (adapted from PR by CatManJr)"""
     Estimates1, Coefficients1, Uncertainties1 = lir(
         ["DIC", "TA"],
-        Path,
         OutputCoordinates,
         PredictorMeasurements,
         Equations=[7],
@@ -456,7 +449,6 @@ def test_pr_13_lir_short_circuit():
     )
     Estimates2, Coefficients2, Uncertainties2 = lir(
         ["DIC", "TA", "pH"],
-        Path,
         OutputCoordinates,
         PredictorMeasurements,
         Equations=[7],
@@ -470,7 +462,6 @@ def test_pr_13_mixed_short_circuit():
     """Does mixed correctly apply the Cant adjustment for DIC when pH is missing from the request? (adapted from PR by CatManJr)"""
     Estimates1, Uncertainties1 = mixed(
         ["DIC", "TA"],
-        Path,
         OutputCoordinates,
         PredictorMeasurements,
         Equations=[7],
@@ -478,7 +469,6 @@ def test_pr_13_mixed_short_circuit():
     )
     Estimates2, Uncertainties2 = mixed(
         ["DIC", "TA", "pH"],
-        Path,
         OutputCoordinates,
         PredictorMeasurements,
         Equations=[7],

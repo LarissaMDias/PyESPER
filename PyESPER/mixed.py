@@ -1,4 +1,4 @@
-def mixed(DesiredVariables, Path, OutputCoordinates={}, PredictorMeasurements={}, **kwargs):
+def mixed(DesiredVariables, OutputCoordinates={}, PredictorMeasurements={}, **kwargs):
     
     """
     Python interpretation of ESPER_Mixedv1.1
@@ -19,8 +19,8 @@ def mixed(DesiredVariables, Path, OutputCoordinates={}, PredictorMeasurements={}
     tic = time.perf_counter()
 
     # Fetch estimates and uncertainties from PyESPER_LIR and PyESPER_NN
-    EstimatesLIR, _, UncertaintiesLIR = lir(DesiredVariables, Path, OutputCoordinates, PredictorMeasurements, **kwargs)
-    EstimatesNN, UncertaintiesNN = nn(DesiredVariables, Path, OutputCoordinates, PredictorMeasurements, **kwargs)
+    EstimatesLIR, _, UncertaintiesLIR = lir(DesiredVariables, OutputCoordinates, PredictorMeasurements, **kwargs)
+    EstimatesNN, UncertaintiesNN = nn(DesiredVariables, OutputCoordinates, PredictorMeasurements, **kwargs)
 
     Estimates, Uncertainties = {}, {}
     for est_type in EstimatesLIR.keys():

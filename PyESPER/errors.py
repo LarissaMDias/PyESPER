@@ -61,6 +61,6 @@ def errors(OutputCoordinates={}, PredictorMeasurements={}):
         )
 
     warnings.warn(
-        "Please note that, for consistency with MATLAB ESPERv1, the now-deprecated sw package is used. This will be replaced with gsw in future updates.",
+        "Please note that, for consistency with MATLAB ESPERv1, the now-deprecated seawater package is used. This will be replaced with gsw in future updates.",
         PendingDeprecationWarning,
     )

@@ -1,1 +1,2 @@
-recursive-include Mat_fullgrid *.mat
+recursive-include PyESPER/data *.mat *.csv
+include PyESPER/NeuralNetworks/Nets_Info

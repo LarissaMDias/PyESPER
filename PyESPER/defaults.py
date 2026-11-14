@@ -24,6 +24,10 @@ def defaults(
 
     import numpy as np
     from PyESPER.errors import errors
+    from importlib import resources
+
+    # Set the absolute path to the various datafiles
+    Path = resources.files("PyESPER")
 
     # Check and define Equations based on user-defined kwargs, or use default values
     Equations = kwargs.get("Equations", list(range(1, 17)))
@@ -72,4 +76,4 @@ def defaults(
                 "Warning: Different numbers of input uncertainties and input measurements."
             )
 
-    return Equations, n, verbose, EstDates, C, PerKgSwTF, MeasUncerts
+    return Equations, n, verbose, EstDates, C, PerKgSwTF, MeasUncerts, Path

@@ -43,7 +43,7 @@ def pH_DIC_nn_adjustment(Path, DesiredVariables, Estimates, YouHaveBeenWarnedCan
         EstDates = [2002.0] * n
 
     # Predefining empty dictionary for results and parsing out estimates
-    Cant_adjusted = {}
+    Cant_adjusted = dict(Estimates) # pass thru Estimates if EstDates not in kwargs
     combos2 = list(Estimates.keys())
     values2 = list(Estimates.values())
 
@@ -61,7 +61,7 @@ def pH_DIC_nn_adjustment(Path, DesiredVariables, Estimates, YouHaveBeenWarnedCan
         for combo, a in zip(combos2, values2):
             a = np.array(a, dtype=float)
             if combo.startswith("DIC"):
-                a = np.where(np.isnan(a), "nan", a + Cant - Cant2002)
+                a = np.where(np.isnan(a), np.nan, a + Cant - Cant2002)
                 Cant_adjusted[combo] = a.tolist()
             else:
                 Cant_adjusted[combo] = a.tolist()
@@ -74,7 +74,7 @@ def pH_DIC_nn_adjustment(Path, DesiredVariables, Estimates, YouHaveBeenWarnedCan
                     salinity = PredictorMeasurements["salinity"]
                     PM_pH = {"salinity": salinity}
                     eq = [16]
-                    _, n, _, EstDates, C, PerKgSwTF, MeasUncerts = defaults(
+                    _, n, _, EstDates, C, PerKgSwTF, MeasUncerts, Path = defaults(
                         ["TA"],
                         PM_pH,
                         OutputCoordinates,
@@ -167,7 +167,7 @@ def pH_DIC_nn_adjustment(Path, DesiredVariables, Estimates, YouHaveBeenWarnedCan
                             "(e.g., very high or low salinity or estimates in marginal seas)."
                         )
                         warning.append(warning_message)
-                    else:
+                    else: # Doesn't this overwrite pHadj 9 lines ago?
                         pHadj = np.array(values)
                         
                     Cant_adjusted[combo] = pHadj.tolist()

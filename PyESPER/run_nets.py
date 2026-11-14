@@ -64,11 +64,11 @@ def run_nets(DesiredVariables, Equations, code={}):
             for n in range(1, 5):   
                 # have to do package-level imports to avoid conflicts with
                 # wherever the working directory happens to be
-                fOName = f".NeuralNetworks.ESPER_{v}_{e}_Other_{n}"
-                fAName = f".NeuralNetworks.ESPER_{v}_{e}_Atl_{n}"
-                moda = importlib.import_module(fAName, package="PyESPER")
-                modo = importlib.import_module(fOName, package="PyESPER")
-                # from importlib import reload # seems needless?
+                fOName = f"PyESPER.data.NeuralNetworks.ESPER_{v}_{e}_Other_{n}"
+                fAName = f"PyESPER.data.NeuralNetworks.ESPER_{v}_{e}_Atl_{n}"
+                moda = importlib.import_module(fAName)
+                modo = importlib.import_module(fOName)
+                # from importlib import reload # needless?
                 # reload(moda)
                 # reload(modo)   
                 # Running the nets

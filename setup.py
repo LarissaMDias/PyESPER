@@ -9,10 +9,7 @@ setup(
     description="Python version of ESPERv1",
     author="LMD",
     author_email="lmdias@uw.edu",
-    packages=["PyESPER"],
-    package_data={
-        "PyESPER": ["*.csv"],
-    },
+    packages=find_packages(),
     include_package_data=True,  # make sure the data files are installed
     install_requires=[
         "numpy",
