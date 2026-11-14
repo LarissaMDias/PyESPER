@@ -23,6 +23,11 @@ def defaults(
     """
 
     import numpy as np
+    from PyESPER.errors import errors
+    from importlib import resources
+
+    # Set the absolute path to the various datafiles
+    Path = resources.files("PyESPER")
 
     # Check and define Equations based on user-defined kwargs, or use default values
     Equations = kwargs.get("Equations", list(range(1, 17)))
@@ -62,7 +67,7 @@ def defaults(
     if MeasUncerts:
         if max(len(v) for v in MeasUncerts.values()) != n:
             if min(len(v) for v in MeasUncerts.values()) != 1:
-                raise CustomError(
+                raise ValueError( #CustomError kept throwing lint errors
                     "MeasUncerts must be undefined, a vector with the same number of elements as "
                     "PredictorMeasurements has columns, or a matrix of identical dimension to PredictorMeasurements."
                 )
@@ -71,4 +76,4 @@ def defaults(
                 "Warning: Different numbers of input uncertainties and input measurements."
             )
 
-    return Equations, n, verbose, EstDates, C, PerKgSwTF, MeasUncerts
+    return Equations, n, verbose, EstDates, C, PerKgSwTF, MeasUncerts, Path

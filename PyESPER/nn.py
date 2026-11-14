@@ -1,11 +1,10 @@
-def nn(DesiredVariables, Path, OutputCoordinates={}, PredictorMeasurements={}, **kwargs):
+def nn(DesiredVariables, OutputCoordinates={}, PredictorMeasurements={}, **kwargs):
 
     """
     Neural networks for seawater property estimation as part of PyESPERsv1.0.0
 
     Inputs: 
         DesiredVariables: list of desired variables to estimate
-        Path: User-defined computer path
         OutputCoordinates: List of coordinates to produce estimates for
         PredictorMeasurements: List of predictor measurements to use in NNs
         **kwargs: Optional inputs specific to users (please see README for full description)
@@ -37,7 +36,7 @@ def nn(DesiredVariables, Path, OutputCoordinates={}, PredictorMeasurements={}, *
     errors(OutputCoordinates, PredictorMeasurements)
 
     # Function which calculates default measurement uncertainties
-    Equations, n, VerboseTF, EstDates, C, PerKgSwTF, MeasUncerts = defaults(
+    Equations, n, VerboseTF, EstDates, C, PerKgSwTF, MeasUncerts, Path = defaults(
         DesiredVariables,
         PredictorMeasurements,
         OutputCoordinates,
@@ -102,7 +101,6 @@ def nn(DesiredVariables, Path, OutputCoordinates={}, PredictorMeasurements={}, *
 
     # Organize output and iteratively calculate uncertainties
     Uncertainties = organize_nn_output(
-        Path,
         DesiredVariables,
         OutputCoordinates,
         PredictorMeasurements,

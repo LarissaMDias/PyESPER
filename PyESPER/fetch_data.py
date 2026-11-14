@@ -21,19 +21,19 @@ def fetch_data(DesiredVariables, Path):
     for v in DesiredVariables:
 
         Cs1 = loadmat(
-            os.path.join(Path, f"Mat_fullgrid/LIR_files_{v}_fullCs1.mat"),
+            os.path.join(Path, "data", "Mat_fullgrid", f"LIR_files_{v}_fullCs1.mat"),
             squeeze_me=True,
         )
         Cs2 = loadmat(
-            os.path.join(Path, f"Mat_fullgrid/LIR_files_{v}_fullCs2.mat"),
+            os.path.join(Path, "data", "Mat_fullgrid", f"LIR_files_{v}_fullCs2.mat"),
             squeeze_me=True,
         )
         Cs3 = loadmat(
-            os.path.join(Path, f"Mat_fullgrid/LIR_files_{v}_fullCs3.mat"),
+            os.path.join(Path, "data", "Mat_fullgrid", f"LIR_files_{v}_fullCs3.mat"),
             squeeze_me=True,
         )
         Grid = loadmat(
-            os.path.join(Path, f"Mat_fullgrid/LIR_files_{v}_fullGrids.mat")
+            os.path.join(Path, "data", "Mat_fullgrid", f"LIR_files_{v}_fullGrids.mat")
         )
 
         # Extract and store all arrays

@@ -1,0 +1,2 @@
+recursive-include PyESPER/data *.mat *.csv *.py
+include PyESPER/data/NeuralNetworks/Nets_Info
