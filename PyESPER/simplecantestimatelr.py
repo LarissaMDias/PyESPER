@@ -4,41 +4,9 @@ from scipy.interpolate import RegularGridInterpolator
 from pathlib import Path
 
 _interpolator_cache = {}
-_DATA_FILENAME = "SimpleCantEstimateLR_full.csv"
-
-
-def _resolve_data_file(data_path=None):
-    package_file = Path(__file__).resolve().parent / _DATA_FILENAME
-
-    if data_path is None:
-        data_file = package_file
-    else:
-        supplied = Path(data_path).expanduser()
-        if supplied.is_file():
-            data_file = supplied
-        elif supplied.is_dir():
-            candidates = (
-                supplied / _DATA_FILENAME,
-                supplied / "PyESPER" / _DATA_FILENAME,
-                package_file,
-            )
-            data_file = next((p for p in candidates if p.is_file()), None)
-            if data_file is None:
-                raise FileNotFoundError(
-                    f"Could not find {_DATA_FILENAME!r} under: "
-                    + ", ".join(str(p) for p in candidates)
-                )
-        else:
-            data_file = supplied
-
-    if not data_file.is_file():
-        raise FileNotFoundError(f"SimpleCant data file not found: {data_file}")
-
-    return data_file.resolve()
-
 
 def simplecantestimatelr(EstDates, longitude, latitude, depth, data_path=None):
-    data_file = _resolve_data_file(data_path)
+    data_file = os.path.join(data_path, "data", "SimpleCantEstimateLR_full.csv")
     cache_key = str(data_file)
 
     if cache_key not in _interpolator_cache:
